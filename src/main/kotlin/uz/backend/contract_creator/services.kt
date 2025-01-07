@@ -6,10 +6,11 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import sun.security.jgss.GSSUtil.login
 
 interface AuthService : UserDetailsService {
-    fun logIn(signInDTO: LogInDTO): TokenDTO?
+
+    fun logIn(signInDTO: LogInDTO): TokenDTO
+    fun signIn(signInDTO: SignInDTO): UserDTO
 
 }
 
@@ -20,7 +21,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): TokenDTO? {
+    override fun logIn(signInDTO: LogInDTO): TokenDTO {
         val authentication =
             UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
@@ -35,6 +36,12 @@ class AuthServiceImpl(
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
         return TokenDTO(token)
+    }
+
+    override fun signIn(signInDTO: SignInDTO): UserDTO {
+        return signInDTO.run {
+            UserDTO.toResponse(userRepository.save(this.toEntity()))
+        }
     }
 
     override fun loadUserByUsername(username: String): UserDetails {
