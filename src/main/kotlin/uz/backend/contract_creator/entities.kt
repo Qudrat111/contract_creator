@@ -23,13 +23,13 @@ class BaseEntity(
     @Column(nullable = false) @ColumnDefault(value = "false") var deleted: Boolean = false
 )
 
-@Entity(name = "users")
+@Entity()
 @Table(name = "users")
 class User(
     @Column(nullable = false)val firstName: String,
     @Column(nullable = false)val lastName: String,
-    @Column(nullable = false, unique = true)val username: String,
-    @Column(nullable = false)val password: String,
+    @Column(nullable = false, unique = true) val userName: String,
+    @Column(nullable = false)val passWord: String,
     @Enumerated(EnumType.STRING) val role: RoleEnum
 
 ): BaseEntity(), UserDetails {
@@ -37,12 +37,14 @@ class User(
         return mutableListOf(SimpleGrantedAuthority(role.toString()))
     }
 
+    @Override
     override fun getPassword(): String {
-       return password
+       return passWord
     }
 
+    @Override
     override fun getUsername(): String {
-        return username
+        return userName
     }
 
 }
