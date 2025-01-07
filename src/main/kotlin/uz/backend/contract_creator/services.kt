@@ -1,5 +1,8 @@
 package uz.backend.contract_creator
 
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFRun
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UserDetails
@@ -7,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import sun.security.jgss.GSSUtil.login
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -64,45 +66,47 @@ class AttachService {
 }
 
 
+@Service
 class DocFileService {
-    private fun processRun(run: XWPFRun, keyValueMap: Map<String, String>) {
-        var keyTemp = run.text()
-        if (keyTemp.contains("##")) {
-            val firstIndex = keyTemp.indexOf("##") + 2
-            keyTemp = keyTemp.substring(firstIndex)
-            if (keyTemp.contains("##")) {
-                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
-                keyTemp = run.text().substring(firstIndex, lastIndex)
-
-
-                //TODO get value by key
-                val key = keyTemp
-                val valueOpt = keyValueMap[key]
-                valueOpt?.let { value ->
-                    if (run.text().substring(lastIndex).contains("##"))
-                        processRun(run, keyValueMap)
-
-                    val newText = run.text().substring(0, firstIndex - 2) + value + run.text().substring(lastIndex + 2)
-                    run.setText(newText, 0)
-                }
-
-            }
+    fun readDocFile(filePath: String):XWPFDocument{
+        FileInputStream(filePath).use { inputStream ->
+            return XWPFDocument(inputStream)
         }
     }
 
     fun changeAllKeysToValues(filePath: String, keyValueMap: Map<String, String>) {
-        FileInputStream(filePath).use { inputStream ->
-            val document = XWPFDocument(inputStream)
-            val paragraphs = document.paragraphs
-            for (paragraph in paragraphs)
-                for (run in paragraph.runs)
-                    if (run != null)
-                        processRun(run, keyValueMap)
-            FileOutputStream(filePath).use { outputStream ->
-                document.write(outputStream)
-            }
-            document.close()
+        val document = readDocFile(filePath)
+        val paragraphs = document.paragraphs
+        for (paragraph in paragraphs)
+            for (run in paragraph.runs)
+                if (run != null)
+                    processRun(run, keyValueMap)
+        FileOutputStream(filePath).use { outputStream ->
+            document.write(outputStream)
         }
+        document.close()
+    }
+    private fun processRun(run: XWPFRun, keyValueMap: Map<String, String>):String? {
+        val text = run.text()
+        if (text.contains("##")) {
+            val firstIndex = text.indexOf("##") + 2
+            if (text.indexOf("##", firstIndex) > -1) {
+                val lastIndex = text.indexOf("##", firstIndex)
+
+                val key = text.substring(firstIndex, lastIndex)
+                val valueOpt = keyValueMap[key]
+                valueOpt?.let { value ->
+                    var newText: String? = text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
+                    if (text.substring(lastIndex + 2).contains("##")) {
+                        run.setText(newText)
+                        newText = processRun(run, keyValueMap)
+                    }
+                    println(newText)
+                    return newText
+                } ?: run { return text }
+            } else return text
+        }
+        return null
     }
 
     fun getKey(run: XWPFRun): String? {
