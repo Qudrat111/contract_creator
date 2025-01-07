@@ -29,10 +29,6 @@ class AuthServiceImpl(
 
         val user  = loadUserByUsername(signInDTO.username)
 
-//        val matches: Boolean = passwordEncoder.matches(signInDTO.password, user.password)
-//
-//        if (!matches) throw UserNotFoundException()
-
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
         return token
@@ -48,6 +44,6 @@ class AuthServiceImpl(
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-       return userRepository.findByUserName(username) ?: throw RuntimeException("User $username not found")
+       return userRepository.findByUserName(username) ?: throw UserNotFoundException( )
     }
 }
