@@ -34,6 +34,9 @@ dependencies {
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
     implementation("org.apache.poi:poi-ooxml:5.3.0")
     implementation("com.itextpdf:itext7-core:8.0.1")
+    implementation("io.jsonwebtoken:jjwt-api:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
+    implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
 }
 
 kotlin {

@@ -1,0 +1,8 @@
+server:
+  port: 80
+
+
+jwt:
+  secretKey: "55d5430e17864da9db4h8dbd64a63777be5c1a7f06k92197c9b8113a3b552l60"
+  expireDate: 30
+

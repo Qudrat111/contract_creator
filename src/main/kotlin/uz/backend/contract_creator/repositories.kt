@@ -52,3 +52,8 @@ class BaseRepositoryImpl<T : BaseEntity>(
         return save(t).apply { entityManager.refresh(this) }
     }
 }
+
+interface UserRepository: BaseRepository<User>{
+
+    fun findByUsername(username: String): User?
+}
