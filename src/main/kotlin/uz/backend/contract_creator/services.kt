@@ -1,12 +1,16 @@
 package uz.backend.contract_creator
 
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFRun
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
-import sun.security.jgss.GSSUtil.login
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 interface AuthService : UserDetailsService {
     fun logIn(signInDTO: LogInDTO): TokenDTO?
@@ -26,7 +30,7 @@ class AuthServiceImpl(
 
         authenticationProvider.authenticate(authentication)
 
-        val user  = loadUserByUsername(signInDTO.username)
+        val user = loadUserByUsername(signInDTO.username)
 
         val matches: Boolean = passwordEncoder.matches(signInDTO.password, user.password)
 
@@ -39,6 +43,80 @@ class AuthServiceImpl(
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-       return userRepository.findByUsername(username) ?: throw RuntimeException("User $username not found")
+        return userRepository.findByUsername(username) ?: throw RuntimeException("User $username not found")
+    }
+}
+
+
+class DocFileService {
+    private fun processRun(run: XWPFRun, keyValueMap: Map<String, String>) {
+        var keyTemp = run.text()
+        if (keyTemp.contains("##")) {
+            val firstIndex = keyTemp.indexOf("##") + 2
+            keyTemp = keyTemp.substring(firstIndex)
+            if (keyTemp.contains("##")) {
+                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
+                keyTemp = run.text().substring(firstIndex, lastIndex)
+
+
+                //TODO get value by key
+                val key = keyTemp
+                val valueOpt = keyValueMap[key]
+                valueOpt?.let { value ->
+                    if (run.text().substring(lastIndex).contains("##"))
+                        processRun(run, keyValueMap)
+
+                    val newText = run.text().substring(0, firstIndex - 2) + value + run.text().substring(lastIndex + 2)
+                    run.setText(newText, 0)
+                }
+
+            }
+        }
+    }
+
+    fun changeAllKeysToValues(filePath: String, keyValueMap: Map<String, String>) {
+        FileInputStream(filePath).use { inputStream ->
+            val document = XWPFDocument(inputStream)
+            val paragraphs = document.paragraphs
+            for (paragraph in paragraphs)
+                for (run in paragraph.runs)
+                    if (run != null)
+                        processRun(run, keyValueMap)
+            FileOutputStream(filePath).use { outputStream ->
+                document.write(outputStream)
+            }
+            document.close()
+        }
+    }
+
+    fun getKey(run: XWPFRun): String? {
+        var keyTemp = run.text()
+        if (keyTemp.contains("##")) {
+            val firstIndex = keyTemp.indexOf("##") + 2
+            keyTemp = keyTemp.substring(firstIndex)
+            if (keyTemp.contains("##")) {
+                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
+                keyTemp = run.text().substring(firstIndex, lastIndex)
+                return keyTemp
+            }
+        }
+        return null
+    }
+
+    fun getKeys(paragraphs: List<XWPFParagraph>): MutableList<String> {
+        val keys = mutableListOf<String>()
+        for (paragraph in paragraphs)
+            keys.addAll(getKeys(paragraph))
+        return keys
+    }
+
+    fun getKeys(paragraph: XWPFParagraph): MutableList<String> {
+        val keys = mutableListOf<String>()
+        for (run in paragraph.runs) {
+            val key = getKey(run)
+            if (key != null)
+                keys.add(key)
+        }
+        return keys
     }
 }
