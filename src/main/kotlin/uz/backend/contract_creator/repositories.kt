@@ -54,6 +54,11 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 interface UserRepository: BaseRepository<User>{
-
     fun findByUsername(username: String): User?
 }
+
+interface TemplateRepository: BaseRepository<Template>
+interface FieldRepository: BaseRepository<Field>
+interface ContractRepository: BaseRepository<Contract>
+interface ContractFieldValueRepository: BaseRepository<ContractFieldValue>
+
