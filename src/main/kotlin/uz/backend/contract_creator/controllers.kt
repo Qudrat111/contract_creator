@@ -35,6 +35,9 @@ class FieldController(
     fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) =
         service.updateField(id, fieldUpdateDTO)
 
+    @DeleteMapping("{id}")
+    fun delete(@PathVariable id: Long) = service.deleteField(id)
+
 }
 
 @RestController
@@ -77,6 +80,8 @@ class TemplateController(private val docFileService: DocFileService) {
 class ContractController(
     private val docFileService: DocFileService,
 ) {
+    @GetMapping("get-by-clint/{clientPassport}")
+    fun getByClint(@PathVariable clientPassport: String) =docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
     fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)

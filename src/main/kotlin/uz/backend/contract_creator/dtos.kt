@@ -41,6 +41,18 @@ data class UserDTO(
     }
 }
 
+data class FieldGetDto(
+    val id: Long,
+    var name: String,
+    var type: String,
+) {
+    companion object {
+        fun toDTO(it: Field): FieldGetDto {
+            return FieldGetDto(it.id!!, it.name, it.type.name)
+        }
+    }
+}
+
 data class FieldDTO(
     @NotNull var name: String,
     @NotNull var type: String
@@ -83,6 +95,18 @@ data class TemplateDto(
                 fieldDTos.add(FieldDTO.toDTO(fieldDTO))
             }
             return TemplateDto(template.name, fieldDTos)
+        }
+    }
+}
+
+data class ContractDto(
+    val contractId: Long,
+    val templateName: String,
+    val clientPassport: String,
+) {
+    companion object {
+        fun toDTO(it: Contract): ContractDto {
+            return ContractDto(it.id!!, it.template?.name!!, it.clientPassport)
         }
     }
 }

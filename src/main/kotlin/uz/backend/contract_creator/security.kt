@@ -32,6 +32,7 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
+import org.springframework.web.cors.CorsConfigurationSource
 
 @Component
 class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) :
@@ -85,10 +86,9 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-    val secretKey: String? = null
-
+     val secretKey: String? = null
     @Value("\${jwt.expireDate}")
-    val expire: Int? = null
+    val expireDate: Int? = null
 
 
     fun generateToken(email: String?): String {
@@ -107,8 +107,8 @@ class JwtProvider {
             .verifyWith(key)
             .build()
             .parse(token)
-            .payload as Claims
-        return payload.subject
+            .getPayload() as Claims
+        return payload.getSubject()
     }
 
     private val key: SecretKey
@@ -133,10 +133,9 @@ class SecurityConfig(
         httpSecurity.authorizeHttpRequests(
             Customizer { auth ->
                 auth
-                    .requestMatchers("/auth/**")
-                    .permitAll()
-                    .anyRequest()
-                    .authenticated()
+                    .requestMatchers("/auth/**").permitAll()
+//                        .requestMatchers("/field/**").permitAll()
+                    .anyRequest().authenticated()
             }
         )
         httpSecurity

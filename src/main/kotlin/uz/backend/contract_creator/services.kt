@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 
@@ -32,8 +33,8 @@ interface AuthService : UserDetailsService {
 
 interface FieldService {
     fun createField(dto: FieldDTO)
-    fun getFieldById(id: Long): FieldDTO
-    fun getAllField(): List<FieldDTO>
+    fun getFieldById(id: Long): FieldGetDto
+    fun getAllField(): List<FieldGetDto>
     fun updateField(id: Long, updateDto: FieldUpdateDTO)
     fun deleteField(id: Long)
 
@@ -72,6 +73,7 @@ class AuthServiceImpl(
     }
 
 
+
     override fun loadUserByUsername(username: String): UserDetails {
 
         return userRepository.findByUserName(username) ?: throw UserNotFoundException()
@@ -100,6 +102,7 @@ class UserServiceImpl(
         }
     }
 }
+
 
 
 @Service
@@ -333,6 +336,10 @@ class DocFileService(
         }
         return keys
     }
+
+    fun getContractsByClint(clientPassport: String): List<ContractDto> {
+        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map {ContractDto.toDTO(it)}
+    }
 }
 
 @Service
@@ -346,12 +353,12 @@ class FieldServiceImpl(
         }
     }
 
-    override fun getFieldById(id: Long): FieldDTO {
-        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldDTO.toDTO(it) } ?: throw FieldNotFoundException()
+    override fun getFieldById(id: Long): FieldGetDto {
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) } ?: throw FieldNotFoundException()
     }
 
-    override fun getAllField(): List<FieldDTO> {
-        return fieldRepository.findAllNotDeleted().map { FieldDTO.toDTO(it) }
+    override fun getAllField(): List<FieldGetDto> {
+        return fieldRepository.findAllNotDeleted().map { FieldGetDto.toDTO(it) }
     }
 
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
@@ -363,11 +370,10 @@ class FieldServiceImpl(
             }
             type?.let { field.type = TypeEnum.valueOf(it.uppercase()) }
         }
-        fieldRepository.saveAndRefresh(field)
+        fieldRepository.save(field)
     }
 
     override fun deleteField(id: Long) {
         fieldRepository.trash(id) ?: FieldNotFoundException()
     }
 }
-
