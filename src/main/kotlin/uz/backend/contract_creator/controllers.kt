@@ -84,5 +84,5 @@ class ContractController(
     @PostMapping("/download")
     fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
 
-    @Get
+
 }
