@@ -28,3 +28,15 @@ class AuthController(
     fun signIn(@RequestBody @Valid signInDTO: SignInDTO) = authService.signIn(signInDTO)
 
 }
+
+@RestController
+@RequestMapping("/user")
+class UserController(
+    private val userService: UserService
+){
+    @PutMapping("change-role/{userId}")
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
+
+    @GetMapping()
+    fun getAll()=userService.getAllUsers()
+}

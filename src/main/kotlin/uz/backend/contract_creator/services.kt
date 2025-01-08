@@ -27,8 +27,6 @@ class AuthServiceImpl(
 
         authenticationProvider.authenticate(authentication)
 
-        val user  = loadUserByUsername(signInDTO.username)
-
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
         return token
@@ -56,6 +54,7 @@ interface UserService{
 
 }
 
+@Service
 class UserServiceImpl(
     private val userRepository: UserRepository
 ):UserService{
