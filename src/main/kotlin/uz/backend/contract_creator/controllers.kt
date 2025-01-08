@@ -84,5 +84,8 @@ class ContractController(
     @PostMapping("/download")
     fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
 
-    @Get
+    @GetMapping("/{id}")
+    fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
+
+
 }

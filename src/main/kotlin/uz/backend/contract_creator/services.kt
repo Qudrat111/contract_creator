@@ -8,6 +8,7 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -16,13 +17,11 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+
 
 interface AuthService : UserDetailsService {
 
@@ -154,11 +153,22 @@ class DocFileService(
         templateRepository.trash(id)
     }
 
-    fun getOneTemplate(id: Long): XWPFDocument? {
+    fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
-            val file = FileInputStream(it.filePath)
-            val document = XWPFDocument(file)
-            return document
+            val filePath = Paths.get("attaches/${it.filePath}").normalize()
+            var resource: Resource? = null
+            resource = UrlResource(filePath.toUri())
+            if (!resource.exists()) {
+                throw FileNotFoundException("File not found: ${it.filePath}")
+            }
+            var contentType = Files.probeContentType(filePath)
+            if (contentType == null) {
+                contentType = "application/octet-stream" // Fallback content type
+            }
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body<Resource>(resource)
+
         }
     }
 
@@ -228,6 +238,32 @@ class DocFileService(
                 }
             }
         }
+    }
+
+    fun getContract(id: Long): ResponseEntity<Resource>? {
+        return contractRepository.findByIdAndDeletedFalse(id)?.let {
+            val filePath = Paths.get("attaches/${it.contractFilePath}").normalize()
+            var resource: Resource? = null
+            resource = UrlResource(filePath.toUri())
+            if (!resource.exists()) {
+                throw FileNotFoundException("File not found: ${it.contractFilePath}")
+            }
+            var contentType = Files.probeContentType(filePath)
+            if (contentType == null) {
+                contentType = "application/octet-stream" // Fallback content type
+            }
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body<Resource>(resource)
+
+        }
+    }
+
+    fun getAllOperatorContracts(id:Long){
+
+    }
+    fun getAllContracts(){
+
     }
 
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
