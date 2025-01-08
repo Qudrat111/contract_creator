@@ -62,7 +62,7 @@ class Field(
     @Enumerated(EnumType.STRING) var type: TypeEnum
 ) : BaseEntity()
 
-@Entity
+@Entity(name = "contracts")
 class Contract(
     @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,

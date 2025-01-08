@@ -81,7 +81,7 @@ class ContractController(
     private val docFileService: DocFileService,
 ) {
     @GetMapping("get-by-clint/{clientPassport}")
-    fun getByClint(@PathVariable clientPassport: String) =docFileService.getContractsByClint(clientPassport)
+    fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
     fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
@@ -92,5 +92,10 @@ class ContractController(
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
 
+    @GetMapping("/get")
+    fun getContractsById() = docFileService.getAllOperatorContracts(getUserId()!!)
 
+
+    @GetMapping
+    fun getAll() = docFileService.getAllContracts()
 }

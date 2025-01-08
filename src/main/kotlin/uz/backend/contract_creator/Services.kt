@@ -18,8 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
+import java.io.FileNotFoundException
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 
@@ -73,7 +73,6 @@ class AuthServiceImpl(
     }
 
 
-
     override fun loadUserByUsername(username: String): UserDetails {
 
         return userRepository.findByUserName(username) ?: throw UserNotFoundException()
@@ -102,7 +101,6 @@ class UserServiceImpl(
         }
     }
 }
-
 
 
 @Service
@@ -262,11 +260,24 @@ class DocFileService(
         }
     }
 
-    fun getAllOperatorContracts(id:Long){
-
+    fun getAllOperatorContracts(id: Long): List<ContractDto> {
+        val contracts = mutableListOf<ContractDto>()
+        contractRepository.getContractsById(id)?.let {
+            it.forEach {
+                contracts.add(ContractDto.toDTO(it))
+            }
+        }
+        return contracts
     }
-    fun getAllContracts(){
 
+    fun getAllContracts(): List<ContractDto>? {
+        val contracts = mutableListOf<ContractDto>()
+        contractRepository.findAllNotDeleted()?.let {
+            it.forEach {
+                contracts.add(ContractDto.toDTO(it))
+            }
+        }
+        return contracts
     }
 
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
@@ -338,7 +349,7 @@ class DocFileService(
     }
 
     fun getContractsByClint(clientPassport: String): List<ContractDto> {
-        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map {ContractDto.toDTO(it)}
+        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
     }
 }
 
@@ -354,7 +365,8 @@ class FieldServiceImpl(
     }
 
     override fun getFieldById(id: Long): FieldGetDto {
-        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) } ?: throw FieldNotFoundException()
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) }
+            ?: throw FieldNotFoundException()
     }
 
     override fun getAllField(): List<FieldGetDto> {

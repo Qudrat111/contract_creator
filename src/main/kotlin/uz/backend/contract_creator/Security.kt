@@ -32,7 +32,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
-import org.springframework.web.cors.CorsConfigurationSource
 
 @Component
 class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) :
