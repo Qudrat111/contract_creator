@@ -72,15 +72,17 @@ data class AddContractDTO(
     @NotNull val clientPassport: String
 )
 
-//data class TemplateDto(
-//    @NotNull val name: String,
-//    @NotNull val keys: List<FieldDTO>
-//) {
-//    companion object {
-//        fun toResponse(template: Template): TemplateDto {
-//            val fieldDTos = mutableListOf<FieldDTO>()
-//            template.
-//            return TemplateDto(template.name)
-//        }
-//    }
-//}
+data class TemplateDto(
+    @NotNull val name: String,
+    @NotNull val keys: List<FieldDTO>
+) {
+    companion object {
+        fun toResponse(template: Template): TemplateDto {
+            val fieldDTos = mutableListOf<FieldDTO>()
+            template.fields.forEach { fieldDTO ->
+                fieldDTos.add(FieldDTO.toDTO(fieldDTO))
+            }
+            return TemplateDto(template.name, fieldDTos)
+        }
+    }
+}

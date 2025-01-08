@@ -162,16 +162,15 @@ class DocFileService(
         }
     }
 
-//    fun getAllTemplates(): List<TemplateDto> {
-//        val listTemplates = mutableListOf<TemplateDto>()
-//        templateRepository.findAllNotDeleted().let {
-//            it.forEach { template ->
-//                listTemplates.add(TemplateDto())
-//            }
-//        }
-//        return listTemplates
-//    }
-
+    fun getAllTemplates(): List<TemplateDto> {
+        val listTemplates = mutableListOf<TemplateDto>()
+        templateRepository.findAllNotDeleted().let {
+            it.forEach { template ->
+                listTemplates.add(TemplateDto.toResponse(template))
+            }
+        }
+        return listTemplates
+    }
 
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
