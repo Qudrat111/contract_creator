@@ -162,17 +162,15 @@ class DocFileService(
         }
     }
 
-    fun getAllTemplates(): List<XWPFDocument> {
-        val listTemplates = mutableListOf<XWPFDocument>()
-        templateRepository.findAllNotDeleted().let {
-            it.forEach { template ->
-                val file = FileInputStream(template.filePath)
-                val document = XWPFDocument(file)
-                listTemplates.add(document)
-            }
-        }
-        return listTemplates
-    }
+//    fun getAllTemplates(): List<TemplateDto> {
+//        val listTemplates = mutableListOf<TemplateDto>()
+//        templateRepository.findAllNotDeleted().let {
+//            it.forEach { template ->
+//                listTemplates.add(TemplateDto())
+//            }
+//        }
+//        return listTemplates
+//    }
 
 
 
@@ -191,6 +189,7 @@ class DocFileService(
                         else -> throw RuntimeException("invalid file type")
                     }
                     filePathStr = "$filePathStr.$fileType"
+
                     val filePath = Paths.get(filePathStr)
                     val resource = UrlResource(filePath.toUri())
 
