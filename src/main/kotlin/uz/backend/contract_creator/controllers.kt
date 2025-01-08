@@ -74,7 +74,7 @@ class UserController(
 @RequestMapping("/template")
 class TemplateController(private val docFileService: DocFileService) {
 
-    @PostMapping("add-template?{name}")
+    @PostMapping("add-template")
     fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
         docFileService.createNewTemplate(file, name)
 }

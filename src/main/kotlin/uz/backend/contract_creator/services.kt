@@ -122,7 +122,8 @@ class UserServiceImpl(
 @Service
 class DocFileService(
     private val templateRepository: TemplateRepository,
-    private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val fieldRepository: FieldRepository
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -157,7 +158,12 @@ class DocFileService(
     }
 
     fun createNewTemplate(file: MultipartFile, name: String) {
-        val filePath = "./files/templates/${file.originalFilename}-" + UUID.randomUUID()
+        val filename = file.originalFilename!!.substringBeforeLast(".")+"-"+UUID.randomUUID()+".docx"
+        val filePath = "./files/templates/$filename"
+//        FileOutputStream(filePath).use { out ->
+//            out.write(file.bytes)
+//        }
+
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, Paths.get(filePath))
         }
@@ -167,7 +173,7 @@ class DocFileService(
     }
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
-        return keys.map { Field(it, TypeEnum.STRING) }
+        return keys.map { fieldRepository.save(Field(it, TypeEnum.STRING)) }
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
@@ -247,7 +253,7 @@ class DocFileService(
             val firstIndex = keyTemp.indexOf("##") + 2
             keyTemp = keyTemp.substring(firstIndex)
             if (keyTemp.contains("##")) {
-                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
+                val lastIndex = keyTemp.indexOf("##")+2
                 keyTemp = run.text().substring(firstIndex, lastIndex)
                 return keyTemp
             }
