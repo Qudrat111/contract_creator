@@ -1,5 +1,14 @@
 package uz.backend.contract_creator
 
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFRun
+import org.docx4j.Docx4J
+import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+import org.springframework.core.io.Resource
+import org.springframework.core.io.UrlResource
+import org.springframework.http.HttpHeaders
+import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UserDetails
@@ -8,12 +17,11 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import sun.security.jgss.GSSUtil.login
-import java.io.File
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.util.*
 
 interface AuthService : UserDetailsService {
 
