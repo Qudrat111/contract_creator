@@ -19,9 +19,6 @@ import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry
-import org.springframework.security.config.annotation.web.configurers.CorsConfigurer
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.context.SecurityContextHolder
@@ -35,7 +32,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
-import org.springframework.web.cors.CorsConfigurationSource
 
 @Component
 class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) :
@@ -89,7 +85,8 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-     val secretKey: String? = null
+    val secretKey: String? = null
+
     @Value("\${jwt.expireDate}")
     val expire: Int? = null
 
@@ -133,25 +130,25 @@ class SecurityConfig(
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
 
-            httpSecurity.authorizeHttpRequests(
-                Customizer { auth ->
-                    auth
-                        .requestMatchers("/auth/**")
-                        .permitAll()
-                        .anyRequest()
-                        .authenticated()
-                }
-            )
-          httpSecurity
-//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
-                .csrf { obj -> obj.disable() }
-            httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
-                conf.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+        httpSecurity.authorizeHttpRequests(
+            Customizer { auth ->
+                auth
+                    .requestMatchers("/auth/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated()
             }
-            httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
-            return httpSecurity.build()
+        )
+        httpSecurity
+//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
+            .csrf { obj -> obj.disable() }
+        httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
+            conf.sessionCreationPolicy(
+                SessionCreationPolicy.STATELESS
+            )
+        }
+        httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+        return httpSecurity.build()
 
     }
 

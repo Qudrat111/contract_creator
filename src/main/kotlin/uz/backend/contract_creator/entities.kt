@@ -26,20 +26,20 @@ class BaseEntity(
 @Entity()
 @Table(name = "users")
 class User(
-    @Column(nullable = false)val firstName: String,
-    @Column(nullable = false)val lastName: String,
+    @Column(nullable = false) val firstName: String,
+    @Column(nullable = false) val lastName: String,
     @Column(nullable = false, unique = true) val userName: String,
-    @Column(nullable = false)val passWord: String,
+    @Column(nullable = false) val passWord: String,
     @Enumerated(EnumType.STRING) var role: RoleEnum
 
-): BaseEntity(), UserDetails {
+) : BaseEntity(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return mutableListOf(SimpleGrantedAuthority(role.toString()))
     }
 
     @Override
     override fun getPassword(): String {
-       return passWord
+        return passWord
     }
 
     @Override
@@ -52,25 +52,25 @@ class User(
 @Entity
 class Template(
     @Column(nullable = false) val name: String,
-    @Column(nullable = false)val filePath: String,
+    @Column(nullable = false) val filePath: String,
     @ManyToMany val fields: List<Field>,
-): BaseEntity()
+) : BaseEntity()
 
 @Entity
 class Field(
     @Column(nullable = false) var name: String,
     @Enumerated(EnumType.STRING) var type: TypeEnum
-): BaseEntity()
+) : BaseEntity()
 
 @Entity
 class Contract(
 
-    @ManyToOne val template : Template? = null,
+    @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
     @ElementCollection var allowedOperators: MutableList<Long> = mutableListOf(),
 
-): BaseEntity()
+    ) : BaseEntity()
 
 @Entity
 class ContractFieldValue(
@@ -79,4 +79,4 @@ class ContractFieldValue(
     @OneToOne val field: Field,
     @Column(nullable = false) val value: String,
 
-): BaseEntity()
+    ) : BaseEntity()

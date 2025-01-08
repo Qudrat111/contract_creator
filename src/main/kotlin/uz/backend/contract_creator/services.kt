@@ -16,7 +16,10 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.io.*
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -146,6 +149,32 @@ class DocFileService(
         val fields = getFieldsByKeys(keys)
         templateRepository.save(Template(name, filePath, fields))
     }
+
+    fun deleteTemplate(id: Long) {
+        templateRepository.trash(id)
+    }
+
+    fun getOneTemplate(id: Long): XWPFDocument? {
+        return templateRepository.findByIdAndDeletedFalse(id)?.let {
+            val file = FileInputStream(it.filePath)
+            val document = XWPFDocument(file)
+            return document
+        }
+    }
+
+    fun getAllTemplates(): List<XWPFDocument> {
+        val listTemplates = mutableListOf<XWPFDocument>()
+        templateRepository.findAllNotDeleted().let {
+            it.forEach { template ->
+                val file = FileInputStream(template.filePath)
+                val document = XWPFDocument(file)
+                listTemplates.add(document)
+            }
+        }
+        return listTemplates
+    }
+
+
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
         return keys.map { Field(it, TypeEnum.STRING) }
