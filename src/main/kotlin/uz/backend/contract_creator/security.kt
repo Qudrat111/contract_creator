@@ -32,7 +32,6 @@ import org.springframework.web.filter.OncePerRequestFilter
 import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
-import org.springframework.web.cors.CorsConfigurationSource
 
 @Component
 class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) :
@@ -86,7 +85,8 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-     val secretKey: String? = null
+    val secretKey: String? = null
+
     @Value("\${jwt.expireDate}")
     val expire: Int? = null
 
@@ -130,25 +130,25 @@ class SecurityConfig(
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
 
-            httpSecurity.authorizeHttpRequests(
-                Customizer { auth ->
-                    auth
-                        .requestMatchers("/auth/**")
-                        .permitAll()
-                        .anyRequest()
-                        .authenticated()
-                }
-            )
-          httpSecurity
-//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
-                .csrf { obj -> obj.disable() }
-            httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
-                conf.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+        httpSecurity.authorizeHttpRequests(
+            Customizer { auth ->
+                auth
+                    .requestMatchers("/auth/**")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated()
             }
-            httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
-            return httpSecurity.build()
+        )
+        httpSecurity
+//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
+            .csrf { obj -> obj.disable() }
+        httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
+            conf.sessionCreationPolicy(
+                SessionCreationPolicy.STATELESS
+            )
+        }
+        httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+        return httpSecurity.build()
 
     }
 

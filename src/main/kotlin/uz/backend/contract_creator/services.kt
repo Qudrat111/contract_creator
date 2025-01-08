@@ -19,6 +19,10 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.*
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -73,6 +77,7 @@ class AuthServiceImpl(
 
 
     override fun loadUserByUsername(username: String): UserDetails {
+
         return userRepository.findByUserName(username) ?: throw UserNotFoundException()
     }
 }
@@ -165,6 +170,30 @@ class DocFileService(
         templateRepository.save(Template(name, filePath, fields))
     }
 
+    fun deleteTemplate(id: Long) {
+        templateRepository.trash(id)
+    }
+
+    fun getOneTemplate(id: Long): XWPFDocument? {
+        return templateRepository.findByIdAndDeletedFalse(id)?.let {
+            val file = FileInputStream(it.filePath)
+            val document = XWPFDocument(file)
+            return document
+        }
+    }
+
+//    fun getAllTemplates(): List<TemplateDto> {
+//        val listTemplates = mutableListOf<TemplateDto>()
+//        templateRepository.findAllNotDeleted().let {
+//            it.forEach { template ->
+//                listTemplates.add(TemplateDto())
+//            }
+//        }
+//        return listTemplates
+//    }
+
+
+
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
         return keys.map { fieldRepository.save(Field(it, TypeEnum.STRING)) }
     }
@@ -180,6 +209,7 @@ class DocFileService(
                         else -> throw RuntimeException("invalid file type")
                     }
                     filePathStr = "$filePathStr.$fileType"
+
                     val filePath = Paths.get(filePathStr)
                     val resource = UrlResource(filePath.toUri())
 
