@@ -17,9 +17,14 @@ java {
 
 repositories {
     mavenCentral()
+    maven {
+        url = uri("https://repository.aspose.com/repo/")
+    }
 }
 
 dependencies {
+    implementation("org.docx4j:docx4j-core:11.5.1")
+
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -42,6 +47,7 @@ dependencies {
     implementation("com.google.zxing:javase:3.5.2")
 
     implementation("org.apache.poi:poi-ooxml:5.2.3")
+
 }
 
 kotlin {

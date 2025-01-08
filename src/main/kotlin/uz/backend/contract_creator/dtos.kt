@@ -59,3 +59,12 @@ data class FieldUpdateDTO(
     val name: String?,
     val type: String?
 )
+data class DownloadContractDTO (
+    @NotNull val contractId: Long,
+    @NotNull val fileType: String
+)
+data class AddContractDTO (
+    @NotNull val templateId: Long,
+    @NotNull val fields: Map<String, String>,
+    @NotNull val clientPassport: String
+)
