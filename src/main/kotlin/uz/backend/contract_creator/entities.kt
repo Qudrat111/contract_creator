@@ -30,7 +30,7 @@ class User(
     @Column(nullable = false)val lastName: String,
     @Column(nullable = false, unique = true) val userName: String,
     @Column(nullable = false)val passWord: String,
-    @Enumerated(EnumType.STRING) val role: RoleEnum
+    @Enumerated(EnumType.STRING) var role: RoleEnum
 
 ): BaseEntity(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {

@@ -42,8 +42,33 @@ class AuthServiceImpl(
         }
     }
 
+
+
     override fun loadUserByUsername(username: String): UserDetails {
 
        return userRepository.findByUserName(username) ?: throw UserNotFoundException( )
+    }
+}
+
+interface UserService{
+    fun changeRole(userId: Long, role: RoleEnum) : UserDTO
+    fun getAllUsers(): List<UserDTO>
+
+}
+
+class UserServiceImpl(
+    private val userRepository: UserRepository
+):UserService{
+
+    override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
+        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
+        user.role = role
+        return UserDTO.toResponse(userRepository.save(user))
+    }
+
+    override fun getAllUsers(): List<UserDTO> {
+       return userRepository.findAllNotDeleted().map {
+           UserDTO.toResponse(it)
+       }
     }
 }
