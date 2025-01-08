@@ -58,7 +58,9 @@ interface UserRepository: BaseRepository<User>{
 }
 
 interface TemplateRepository: BaseRepository<Template>
-interface FieldRepository: BaseRepository<Field>
+interface FieldRepository: BaseRepository<Field>{
+    fun existsByName(name: String): Boolean
+}
 interface ContractRepository: BaseRepository<Contract>
 interface ContractFieldValueRepository: BaseRepository<ContractFieldValue>
 

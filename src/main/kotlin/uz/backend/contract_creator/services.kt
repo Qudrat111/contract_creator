@@ -10,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import sun.security.jgss.GSSUtil.login
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -23,12 +22,21 @@ interface AuthService : UserDetailsService {
 
 }
 
+interface FieldService {
+    fun createField(dto: FieldDTO)
+    fun getFieldById(id: Long): FieldDTO
+    fun getAllField(): List<FieldDTO>
+    fun updateField(id: Long, updateDto: FieldUpdateDTO)
+    fun deleteField(id: Long)
+
+}
+
 @Service
 class AuthServiceImpl(
     private val authenticationProvider: AuthenticationProvider,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
 ) : AuthService {
     override fun logIn(signInDTO: LogInDTO): TokenDTO? {
         val authentication =
@@ -66,7 +74,7 @@ class AttachService {
     }
 }
 
-
+@Service
 class DocFileService {
     private fun processRun(run: XWPFRun, keyValueMap: Map<String, String>) {
         var keyTemp = run.text()
@@ -137,5 +145,41 @@ class DocFileService {
                 keys.add(key)
         }
         return keys
+    }
+}
+
+@Service
+class FieldServiceImpl(
+    private val fieldRepository: FieldRepository,
+) : FieldService {
+    override fun createField(dto: FieldDTO) {
+        dto.run {
+            if (fieldRepository.existsByName(name)) throw ExistsFieldException()
+            fieldRepository.saveAndRefresh(FieldDTO.toEntity(name, type))
+        }
+    }
+
+    override fun getFieldById(id: Long): FieldDTO {
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldDTO.toDTO(it) } ?: throw FieldNotFoundException()
+    }
+
+    override fun getAllField(): List<FieldDTO> {
+        return fieldRepository.findAllNotDeleted().map { FieldDTO.toDTO(it) }
+    }
+
+    override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
+        val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
+        updateDto.run {
+            name?.let {
+                if (fieldRepository.existsByName(name)) throw ExistsFieldException()
+                field.name = it
+            }
+            type?.let { field.type = TypeEnum.valueOf(it.uppercase()) }
+        }
+        fieldRepository.saveAndRefresh(field)
+    }
+
+    override fun deleteField(id: Long) {
+        fieldRepository.trash(id) ?: FieldNotFoundException()
     }
 }

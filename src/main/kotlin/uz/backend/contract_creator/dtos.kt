@@ -12,3 +12,23 @@ data class LogInDTO (
 
     @NotNull val password: String
 )
+
+data class FieldDTO(
+    @NotNull var name: String,
+    @NotNull var type: String
+) {
+    companion object {
+        fun toEntity(name: String, type: String): Field {
+            return Field(name, TypeEnum.valueOf(type.uppercase()))
+        }
+
+        fun toDTO(it: Field): FieldDTO {
+            return FieldDTO(it.name, it.type.name)
+        }
+    }
+}
+
+data class FieldUpdateDTO(
+    val name: String?,
+    val type: String?
+)

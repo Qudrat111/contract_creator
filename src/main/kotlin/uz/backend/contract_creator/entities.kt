@@ -56,8 +56,8 @@ class Template(
 
 @Entity
 class Field(
-    @Column(nullable = false)val name: String,
-    @Enumerated(EnumType.STRING)val type: TypeEnum
+    @Column(nullable = false) var name: String,
+    @Enumerated(EnumType.STRING) var type: TypeEnum
 ): BaseEntity()
 
 @Entity
