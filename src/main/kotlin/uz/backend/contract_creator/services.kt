@@ -34,8 +34,8 @@ interface AuthService : UserDetailsService {
 
 interface FieldService {
     fun createField(dto: FieldDTO)
-    fun getFieldById(id: Long): FieldDTO
-    fun getAllField(): List<FieldDTO>
+    fun getFieldById(id: Long): FieldGetDto
+    fun getAllField(): List<FieldGetDto>
     fun updateField(id: Long, updateDto: FieldUpdateDTO)
     fun deleteField(id: Long)
 
@@ -319,12 +319,12 @@ class FieldServiceImpl(
         }
     }
 
-    override fun getFieldById(id: Long): FieldDTO {
-        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldDTO.toDTO(it) } ?: throw FieldNotFoundException()
+    override fun getFieldById(id: Long): FieldGetDto {
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) } ?: throw FieldNotFoundException()
     }
 
-    override fun getAllField(): List<FieldDTO> {
-        return fieldRepository.findAllNotDeleted().map { FieldDTO.toDTO(it) }
+    override fun getAllField(): List<FieldGetDto> {
+        return fieldRepository.findAllNotDeleted().map { FieldGetDto.toDTO(it) }
     }
 
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
