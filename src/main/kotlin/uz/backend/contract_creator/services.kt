@@ -102,18 +102,6 @@ class UserServiceImpl(
     }
 }
 
-@Service
-class AttachService {
-    fun saveToSystem(file: MultipartFile): String? {
-        val folder = File("Files")
-        if (!folder.exists()) folder.mkdir()
-
-        val bytes = file.bytes
-        val path: Path = Paths.get("Files/" + file.originalFilename)
-        Files.write(path, bytes)
-        return file.originalFilename
-    }
-}
 
 
 @Service

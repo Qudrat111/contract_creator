@@ -17,15 +17,6 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
     }
 }
 
-@RestController
-@RequestMapping("/attach")
-class AttachController(
-    private val service: AttachService,
-) {
-
-    @PostMapping("upload")
-    fun fileUpload(@RequestParam("file") file: MultipartFile) = service.saveToSystem(file)
-}
 
 @RestController
 @RequestMapping("/field")
