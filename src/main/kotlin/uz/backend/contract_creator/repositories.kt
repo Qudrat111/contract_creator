@@ -24,7 +24,6 @@ interface BaseRepository<T : BaseEntity> : JpaRepository<T, Long>, JpaSpecificat
     fun findAllNotDeletedForPageable(pageable: Pageable): Page<T>
     fun saveAndRefresh(t: T): T
 }
-
 @EnableJpaRepositories(repositoryBaseClass = BaseRepositoryImpl::class)
 class BaseRepositoryImpl<T : BaseEntity>(
     entityInformation: JpaEntityInformation<T, Long>,
