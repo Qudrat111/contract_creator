@@ -52,6 +52,25 @@ class AuthController(
 }
 
 @RestController
+@RequestMapping("/user")
+class UserController(
+    private val userService: UserService
+){
+    @PutMapping("change-role/{userId}")
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
+
+    @GetMapping()
+    fun getAll()=userService.getAllUsers()
+
+    @GetMapping("{userId}")
+    fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
+
+    @PutMapping("give-permission")
+    fun givePermission(@RequestParam userId: Long,
+                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
+}
+
+@RestController
 @RequestMapping("/template")
 class TemplateController(private val docFileService: DocFileService) {
 

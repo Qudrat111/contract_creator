@@ -16,6 +16,10 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -79,12 +83,16 @@ class AuthServiceImpl(
 interface UserService {
     fun changeRole(userId: Long, role: RoleEnum): UserDTO
     fun getAllUsers(): List<UserDTO>
+    fun getOneUser(userId: Long) : UserDTO
+    fun givePermission(userId: Long, contractId:Long)
 
 }
 
+@Service
 class UserServiceImpl(
-    private val userRepository: UserRepository
-) : UserService {
+    private val userRepository: UserRepository,
+    private val contractRepository: ContractRepository
+):UserService{
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -93,9 +101,20 @@ class UserServiceImpl(
     }
 
     override fun getAllUsers(): List<UserDTO> {
-        return userRepository.findAllNotDeleted().map {
-            UserDTO.toResponse(it)
-        }
+       return userRepository.findAllNotDeleted().map {
+           UserDTO.toResponse(it)
+       }
+    }
+
+    override fun getOneUser(userId: Long): UserDTO {
+        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
+        return UserDTO.toResponse(user)
+    }
+
+    override fun givePermission(userId: Long, contractId: Long) {
+        val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
+        if(userRepository.existsById(userId))contract.allowedOperators.add(userId)
+         else throw UserNotFoundException()
     }
 }
 
@@ -183,21 +202,11 @@ class DocFileService(
         addContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                 template.let {
-                    var fileName = it.filePath.substringAfterLast("/")
-                    val contractFilePathDocx = "./files/contracts/${fileName}"
-                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
-
-                    changeAllKeysToValues(templateId, contractFilePathDocx, fields)
-
-                    fileName = fileName.substringBeforeLast(".")
-                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    convertWordToPdf(
-                        Files.newInputStream(Paths.get(contractFilePathDocx)),
-                        Files.newOutputStream(Paths.get(contractFilePathPdf))
-                    )
-//                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
-
-                    contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                    val fileName = it.filePath.substringAfterLast("/")
+                    val contractFilePath = "./files/contracts/${fileName}-" + UUID.randomUUID()
+//                    file.inputStream.use { inputStream ->
+//                        Files.copy(inputStream, Paths.get(filePath))
+//                    }
                 }
             }
         }
