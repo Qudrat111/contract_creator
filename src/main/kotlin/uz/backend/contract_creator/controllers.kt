@@ -58,9 +58,21 @@ class AuthController(
 @RequestMapping("/template")
 class TemplateController(private val docFileService: DocFileService) {
 
-    @PostMapping("add-template?{name}")
+    @PostMapping("add-template")
     fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
         docFileService.createNewTemplate(file, name)
+
+    @GetMapping("/{id}")
+    fun get(@PathVariable("id") id: Long) = docFileService.getKeysByTemplateId(id)
+
+    @GetMapping("/show/{id}")
+    fun show(@PathVariable("id") id: Long) = docFileService.getOneTemplate(id)
+
+    @DeleteMapping("/id")
+    fun delete(@PathVariable("id") id: Long) = docFileService.deleteTemplate(id)
+
+    @GetMapping("/all")
+    fun getAll() = docFileService.getAllTemplates()
 }
 
 @RestController
@@ -70,5 +82,12 @@ class ContractController(
 ) {
     @GetMapping("get-by-clint/{clientPassport}")
     fun getByClint(@PathVariable clientPassport: String) =docFileService.getContractsByClint(clientPassport)
+
+    @GetMapping("/add")
+    fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
+
+    @PostMapping("/download")
+    fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
+
 
 }
