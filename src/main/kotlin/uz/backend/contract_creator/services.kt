@@ -1,8 +1,6 @@
 package uz.backend.contract_creator
 
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import org.apache.poi.xwpf.usermodel.XWPFParagraph
-import org.apache.poi.xwpf.usermodel.XWPFRun
+import org.apache.poi.xwpf.usermodel.*
 import org.docx4j.Docx4J
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import org.springframework.core.io.Resource
@@ -71,7 +69,6 @@ class AuthServiceImpl(
 
 
     override fun loadUserByUsername(username: String): UserDetails {
-
         return userRepository.findByUserName(username) ?: throw UserNotFoundException()
     }
 }
@@ -103,7 +100,8 @@ class UserServiceImpl(
 @Service
 class DocFileService(
     private val templateRepository: TemplateRepository,
-    private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val fieldRepository: FieldRepository
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -138,7 +136,8 @@ class DocFileService(
     }
 
     fun createNewTemplate(file: MultipartFile, name: String) {
-        val filePath = "./files/templates/${file.originalFilename}-" + UUID.randomUUID()
+        val filename = file.originalFilename!!.substringBeforeLast(".") + "-" + UUID.randomUUID() + ".docx"
+        val filePath = "./files/templates/$filename"
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, Paths.get(filePath))
         }
@@ -148,7 +147,7 @@ class DocFileService(
     }
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
-        return keys.map { Field(it, TypeEnum.STRING) }
+        return keys.map { fieldRepository.save(Field(it, TypeEnum.STRING)) }
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
@@ -179,8 +178,8 @@ class DocFileService(
         throw RuntimeException("something went wrong")
     }
 
-    fun addContract(addContractDTO: AddContractDTO) {
-        addContractDTO.run {
+    fun addContract(createContractDTO: CreateContractDTO): Contract {
+        createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                 template.let {
                     var fileName = it.filePath.substringAfterLast("/")
@@ -197,10 +196,12 @@ class DocFileService(
                     )
 //                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                    val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                    return contract
                 }
             }
         }
+        throw RuntimeException("template not found")
     }
 
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
@@ -233,24 +234,40 @@ class DocFileService(
     }
 
     private fun getKey(run: XWPFRun): String? {
-        var keyTemp = run.text()
-        if (keyTemp.contains("##")) {
-            val firstIndex = keyTemp.indexOf("##") + 2
-            keyTemp = keyTemp.substring(firstIndex)
-            if (keyTemp.contains("##")) {
-                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
-                keyTemp = run.text().substring(firstIndex, lastIndex)
-                return keyTemp
+        return getKey(run.text())
+    }
+
+    private fun getKey(text: String): String? {
+        if (text.contains("##")) {
+            val firstIndex = text.indexOf("##") + 2
+            if (text.substring(firstIndex).contains("##")) {
+                val lastIndex = text.indexOf("##",firstIndex)
+                return text.substring(firstIndex, lastIndex)
             }
         }
         return null
     }
 
+    private fun getKey(run: XWPFTableCell): String? {
+        return getKey(run.text)
+    }
+
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
         val keys = mutableListOf<String>()
+        for (table in document.tables)
+            keys.addAll(getKeys(table))
         for (paragraph in document.paragraphs)
             keys.addAll(getKeys(paragraph))
+        return keys
+    }
+
+    private fun getKeys(table: XWPFTable): MutableList<String> {
+        val keys = mutableListOf<String>()
+        for (row in table.rows)
+            for (tableCell in row.tableCells) {
+                getKey(tableCell)?.let { keys.add(it) }
+            }
         return keys
     }
 
@@ -264,9 +281,7 @@ class DocFileService(
     private fun getKeys(paragraph: XWPFParagraph): MutableList<String> {
         val keys = mutableListOf<String>()
         for (run in paragraph.runs) {
-            val key = getKey(run)
-            if (key != null)
-                keys.add(key)
+            getKey(run)?.let { keys.add(it) }
         }
         return keys
     }

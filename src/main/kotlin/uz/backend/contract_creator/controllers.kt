@@ -5,7 +5,6 @@ import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.multipart.MultipartFile
 
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
@@ -52,10 +51,10 @@ class AuthController(
 }
 
 @RestController
-@RequestMapping("/template")
-class TemplateController(private val docFileService: DocFileService) {
+@RequestMapping("/contract")
+class ContractController(private val docFileService: DocFileService) {
 
-    @PostMapping("add-template?{name}")
-    fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
-        docFileService.createNewTemplate(file, name)
+    @PostMapping("add-contract")
+    fun addTemplate(@RequestBody createContractDTO: CreateContractDTO) =
+        docFileService.addContract(createContractDTO)
 }

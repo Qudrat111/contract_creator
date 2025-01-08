@@ -63,7 +63,7 @@ data class DownloadContractDTO (
     @NotNull val contractId: Long,
     @NotNull val fileType: String
 )
-data class AddContractDTO (
+data class CreateContractDTO (
     @NotNull val templateId: Long,
     @NotNull val fields: Map<String, String>,
     @NotNull val clientPassport: String
