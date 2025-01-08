@@ -72,22 +72,21 @@ class AuthServiceImpl(
     }
 
 
-
     override fun loadUserByUsername(username: String): UserDetails {
 
-       return userRepository.findByUserName(username) ?: throw UserNotFoundException( )
+        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
     }
 }
 
-interface UserService{
-    fun changeRole(userId: Long, role: RoleEnum) : UserDTO
+interface UserService {
+    fun changeRole(userId: Long, role: RoleEnum): UserDTO
     fun getAllUsers(): List<UserDTO>
 
 }
 
 class UserServiceImpl(
     private val userRepository: UserRepository
-):UserService{
+) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -96,12 +95,11 @@ class UserServiceImpl(
     }
 
     override fun getAllUsers(): List<UserDTO> {
-       return userRepository.findAllNotDeleted().map {
-           UserDTO.toResponse(it)
-       }
+        return userRepository.findAllNotDeleted().map {
+            UserDTO.toResponse(it)
+        }
     }
 }
-
 
 
 @Service
@@ -300,3 +298,4 @@ class FieldServiceImpl(
         fieldRepository.trash(id) ?: FieldNotFoundException()
     }
 }
+

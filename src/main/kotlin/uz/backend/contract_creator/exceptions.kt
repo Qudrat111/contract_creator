@@ -38,3 +38,6 @@ class FieldNotFoundException() : BaseExceptionHandler() {
 class ExistsFieldException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.EXISTS_FIELD
 }
+class FileNotFoundException():BaseExceptionHandler(){
+    override fun errorCode() = ErrorCodes.FILE_NOT_FOUND
+}
