@@ -22,7 +22,7 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 @RequestMapping("/field")
 class FieldController(
     private val service: FieldService,
-){
+) {
     @PostMapping()
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun create(@RequestBody @Valid fieldDTO: FieldDTO) = service.createField(fieldDTO)
@@ -31,7 +31,7 @@ class FieldController(
     fun get(@PathVariable id: Long) = service.getFieldById(id)
 
     @GetMapping
-    fun getAll() =service.getAllField()
+    fun getAll() = service.getAllField()
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
@@ -51,6 +51,40 @@ class AuthController(
     @PostMapping("sign-in")
     fun signIn(@RequestBody @Valid signInDTO: SignInDTO) = authService.signIn(signInDTO)
 
+}
+
+@RestController
+@RequestMapping("/template")
+class TemplateController(private val docFileService: DocFileService) {
+
+    @PostMapping("add-template")
+    fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
+        docFileService.createNewTemplate(file, name)
+
+    @GetMapping("/{id}")
+    fun get(@PathVariable("id") id: Long) = docFileService.getKeysByTemplateId(id)
+
+    @GetMapping("/show/{id}")
+    fun show(@PathVariable("id") id: Long) = docFileService.getOneTemplate(id)
+
+    @DeleteMapping("/id")
+    fun delete(@PathVariable("id") id: Long) = docFileService.deleteTemplate(id)
+
+    @GetMapping("/all")
+    fun getAll() = docFileService.getAllTemplates()
+}
+
+@RestController
+@RequestMapping("/contract")
+class ContractController(
+    private val docFileService: DocFileService,
+) {
+
+    @GetMapping("/add")
+    fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
+
+    @PostMapping("/download")
+    fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
 }
 
 @RestController

@@ -35,6 +35,7 @@ class BadCredentialsException() : BaseExceptionHandler() {
 class FieldNotFoundException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FIELD_NOT_FOUND
 }
+
 class ExistsFieldException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.EXISTS_FIELD
 }

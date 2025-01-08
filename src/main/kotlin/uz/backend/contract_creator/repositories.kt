@@ -24,6 +24,7 @@ interface BaseRepository<T : BaseEntity> : JpaRepository<T, Long>, JpaSpecificat
     fun findAllNotDeletedForPageable(pageable: Pageable): Page<T>
     fun saveAndRefresh(t: T): T
 }
+
 @EnableJpaRepositories(repositoryBaseClass = BaseRepositoryImpl::class)
 class BaseRepositoryImpl<T : BaseEntity>(
     entityInformation: JpaEntityInformation<T, Long>,
@@ -54,15 +55,16 @@ class BaseRepositoryImpl<T : BaseEntity>(
 }
 
 @Repository
-interface UserRepository: BaseRepository<User>{
+interface UserRepository : BaseRepository<User> {
 
     fun findByUserName(username: String): User?
 }
 
-interface TemplateRepository: BaseRepository<Template>
-interface FieldRepository: BaseRepository<Field>{
+interface TemplateRepository : BaseRepository<Template>
+interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
 }
-interface ContractRepository: BaseRepository<Contract>
-interface ContractFieldValueRepository: BaseRepository<ContractFieldValue>
+
+interface ContractRepository : BaseRepository<Contract>
+interface ContractFieldValueRepository : BaseRepository<ContractFieldValue>
 

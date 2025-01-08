@@ -4,7 +4,7 @@ enum class RoleEnum {
     ROLE_DIRECTOR,
     ROLE_ADMIN,
     ROLE_OPERATOR,
-    ROLE_NEW,
+    ROLE_DEFAULT,
 }
 
 enum class TypeEnum{
