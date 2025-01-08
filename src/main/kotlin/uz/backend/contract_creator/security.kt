@@ -19,9 +19,6 @@ import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
-import org.springframework.security.config.annotation.web.configurers.AuthorizeHttpRequestsConfigurer.AuthorizationManagerRequestMatcherRegistry
-import org.springframework.security.config.annotation.web.configurers.CorsConfigurer
-import org.springframework.security.config.annotation.web.configurers.CsrfConfigurer
 import org.springframework.security.config.annotation.web.configurers.SessionManagementConfigurer
 import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.core.context.SecurityContextHolder
@@ -89,14 +86,13 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-    val secretKey: String? = null
+     val secretKey: String? = null
     @Value("\${jwt.expireDate}")
-    val expireDateDay: Int? = null
+    val expireDate: Int? = null
 
 
     fun generateToken(email: String?): String {
-
-        val expireDate = Date(System.currentTimeMillis() + (expireDateDay!! * 24 * 60 * 60 * 1000L))
+        val expireDate = Date(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L)
 
         return Jwts.builder()
             .subject(email)
