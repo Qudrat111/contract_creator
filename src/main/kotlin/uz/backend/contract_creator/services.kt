@@ -16,7 +16,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import sun.security.jgss.GSSUtil.login
+//import sun.security.jgss.GSSUtil.login
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
@@ -293,7 +293,7 @@ class FieldServiceImpl(
             }
             type?.let { field.type = TypeEnum.valueOf(it.uppercase()) }
         }
-        fieldRepository.saveAndRefresh(field)
+        fieldRepository.save(field)
     }
 
     override fun deleteField(id: Long) {

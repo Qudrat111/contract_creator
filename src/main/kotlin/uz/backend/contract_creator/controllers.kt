@@ -35,6 +35,9 @@ class FieldController(
     @PutMapping("{id}")
     fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) = service.updateField(id, fieldUpdateDTO)
 
+    @DeleteMapping("{id}")
+    fun delete(@PathVariable id: Long) = service.deleteField(id)
+
 }
 
 @RestController

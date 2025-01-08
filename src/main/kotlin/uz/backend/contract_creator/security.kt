@@ -89,14 +89,14 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-     val secretKey: String? = null
+    val secretKey: String? = null
     @Value("\${jwt.expireDate}")
-    val expireDate: Int? = null
+    val expireDateDay: Int? = null
 
 
     fun generateToken(email: String?): String {
 
-        val expireDate = Date(System.currentTimeMillis() + expireDate!! * 24 * 60 * 60 * 1000)
+        val expireDate = Date(System.currentTimeMillis() + (expireDateDay!! * 24 * 60 * 60 * 1000L))
 
         return Jwts.builder()
             .subject(email)
@@ -134,25 +134,24 @@ class SecurityConfig(
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
 
-            httpSecurity.authorizeHttpRequests(
-                Customizer { auth ->
-                    auth
-                        .requestMatchers("/auth/**")
-                        .permitAll()
-                        .anyRequest()
-                        .authenticated()
-                }
-            )
-          httpSecurity
-//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
-                .csrf { obj -> obj.disable() }
-            httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
-                conf.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS
-                )
+        httpSecurity.authorizeHttpRequests(
+            Customizer { auth ->
+                auth
+                    .requestMatchers("/auth/**").permitAll()
+//                        .requestMatchers("/field/**").permitAll()
+                    .anyRequest().authenticated()
             }
-            httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
-            return httpSecurity.build()
+        )
+        httpSecurity
+//                .cors { corsConfigurer -> corsConfigurer.configurationSource(corsConfigurationSource()) }
+            .csrf { obj -> obj.disable() }
+        httpSecurity.sessionManagement { conf: SessionManagementConfigurer<HttpSecurity?> ->
+            conf.sessionCreationPolicy(
+                SessionCreationPolicy.STATELESS
+            )
+        }
+        httpSecurity.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter::class.java)
+        return httpSecurity.build()
 
     }
 
