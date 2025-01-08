@@ -16,10 +16,11 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import sun.security.jgss.GSSUtil.login
-import java.io.*
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 
@@ -82,11 +83,15 @@ class AuthServiceImpl(
 interface UserService{
     fun changeRole(userId: Long, role: RoleEnum) : UserDTO
     fun getAllUsers(): List<UserDTO>
+    fun getOneUser(userId: Long) : UserDTO
+    fun givePermission(userId: Long, contractId:Long)
 
 }
 
+@Service
 class UserServiceImpl(
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
+    private val contractRepository: ContractRepository
 ):UserService{
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
@@ -99,6 +104,17 @@ class UserServiceImpl(
        return userRepository.findAllNotDeleted().map {
            UserDTO.toResponse(it)
        }
+    }
+
+    override fun getOneUser(userId: Long): UserDTO {
+        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
+        return UserDTO.toResponse(user)
+    }
+
+    override fun givePermission(userId: Long, contractId: Long) {
+        val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
+        if(userRepository.existsById(userId))contract.allowedOperators.add(userId)
+         else throw UserNotFoundException()
     }
 }
 

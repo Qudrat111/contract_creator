@@ -5,8 +5,6 @@ import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
-import org.springframework.web.multipart.MultipartFile
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Private
 
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
@@ -61,4 +59,11 @@ class UserController(
 
     @GetMapping()
     fun getAll()=userService.getAllUsers()
+
+    @GetMapping("{userId}")
+    fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
+
+    @PutMapping("give-permission")
+    fun givePermission(@RequestParam userId: Long,
+                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
 }
