@@ -5,6 +5,7 @@ import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.multipart.MultipartFile
 
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
@@ -51,10 +52,29 @@ class AuthController(
 }
 
 @RestController
-@RequestMapping("/contract")
-class ContractController(private val docFileService: DocFileService) {
+@RequestMapping("/user")
+class UserController(
+    private val userService: UserService
+){
+    @PutMapping("change-role/{userId}")
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
 
-    @PostMapping("add-contract")
-    fun addTemplate(@RequestBody createContractDTO: CreateContractDTO) =
-        docFileService.addContract(createContractDTO)
+    @GetMapping()
+    fun getAll()=userService.getAllUsers()
+
+    @GetMapping("{userId}")
+    fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
+
+    @PutMapping("give-permission")
+    fun givePermission(@RequestParam userId: Long,
+                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
+}
+
+@RestController
+@RequestMapping("/template")
+class TemplateController(private val docFileService: DocFileService) {
+
+    @PostMapping("add-template")
+    fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
+        docFileService.createNewTemplate(file, name)
 }
