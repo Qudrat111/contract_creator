@@ -23,26 +23,28 @@ class BaseEntity(
     @Column(nullable = false) @ColumnDefault(value = "false") var deleted: Boolean = false
 )
 
-@Entity(name = "users")
+@Entity()
 @Table(name = "users")
 class User(
     @Column(nullable = false)val firstName: String,
     @Column(nullable = false)val lastName: String,
-    @Column(nullable = false, unique = true)val username: String,
-    @Column(nullable = false)val password: String,
-    @Enumerated(EnumType.STRING) val role: RoleEnum
+    @Column(nullable = false, unique = true) val userName: String,
+    @Column(nullable = false)val passWord: String,
+    @Enumerated(EnumType.STRING) var role: RoleEnum
 
 ): BaseEntity(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return mutableListOf(SimpleGrantedAuthority(role.toString()))
     }
 
+    @Override
     override fun getPassword(): String {
-       return password
+       return passWord
     }
 
+    @Override
     override fun getUsername(): String {
-        return username
+        return userName
     }
 
 }
@@ -66,6 +68,7 @@ class Contract(
     @ManyToOne val template : Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
+    @ElementCollection var allowedOperators: MutableList<Long> = mutableListOf(),
 
 ): BaseEntity()
 

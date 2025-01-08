@@ -18,7 +18,9 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 interface AuthService : UserDetailsService {
-    fun logIn(signInDTO: LogInDTO): TokenDTO?
+
+    fun logIn(signInDTO: LogInDTO): String
+    fun signIn(signInDTO: SignInDTO): UserDTO
 
 }
 
@@ -36,15 +38,15 @@ class AuthServiceImpl(
     private val authenticationProvider: AuthenticationProvider,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val jwtProvider: JwtProvider,
+    private val jwtProvider: JwtProvider
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): TokenDTO? {
+    override fun logIn(signInDTO: LogInDTO): String {
         val authentication =
             UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
 
-        val user = loadUserByUsername(signInDTO.username)
+        val user  = loadUserByUsername(signInDTO.username)
 
         val matches: Boolean = passwordEncoder.matches(signInDTO.password, user.password)
 
@@ -52,12 +54,45 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        return TokenDTO(token)
+        return token
     }
+
+    override fun signIn(signInDTO: SignInDTO): UserDTO {
+        return signInDTO.run {
+            val encoded = passwordEncoder.encode(signInDTO.password)
+            this.password = encoded
+            UserDTO.toResponse(userRepository.save(this.toEntity()))
+        }
+    }
+
+
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-        return userRepository.findByUsername(username) ?: throw RuntimeException("User $username not found")
+       return userRepository.findByUserName(username) ?: throw UserNotFoundException( )
+    }
+}
+
+interface UserService{
+    fun changeRole(userId: Long, role: RoleEnum) : UserDTO
+    fun getAllUsers(): List<UserDTO>
+
+}
+
+class UserServiceImpl(
+    private val userRepository: UserRepository
+):UserService{
+
+    override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
+        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
+        user.role = role
+        return UserDTO.toResponse(userRepository.save(user))
+    }
+
+    override fun getAllUsers(): List<UserDTO> {
+       return userRepository.findAllNotDeleted().map {
+           UserDTO.toResponse(it)
+       }
     }
 }
 

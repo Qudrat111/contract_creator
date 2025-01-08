@@ -45,3 +45,17 @@ class FieldController(
     fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) = service.updateField(id, fieldUpdateDTO)
 
 }
+
+@RestController
+@RequestMapping("/auth")
+class AuthController(
+    private val authService: AuthService
+) {
+
+    @PostMapping("log-in")
+    fun logIn(@RequestBody @Valid logInDTO: LogInDTO) = authService.logIn(logInDTO)
+
+    @PostMapping("sign-in")
+    fun signIn(@RequestBody @Valid signInDTO: SignInDTO) = authService.signIn(signInDTO)
+
+}
