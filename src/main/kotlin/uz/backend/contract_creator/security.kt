@@ -91,12 +91,11 @@ class JwtProvider {
     @Value("\${jwt.secretKey}")
      val secretKey: String? = null
     @Value("\${jwt.expireDate}")
-    val expireDate: Int? = null
+    val expire: Int? = null
 
 
     fun generateToken(email: String?): String {
-
-        val expireDate = Date(System.currentTimeMillis() + expireDate!! * 24 * 60 * 60 * 1000)
+        val expireDate = Date(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L)
 
         return Jwts.builder()
             .subject(email)
@@ -111,8 +110,8 @@ class JwtProvider {
             .verifyWith(key)
             .build()
             .parse(token)
-            .getPayload() as Claims
-        return payload.getSubject()
+            .payload as Claims
+        return payload.subject
     }
 
     private val key: SecretKey
