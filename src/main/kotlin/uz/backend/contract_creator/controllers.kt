@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
+import org.springframework.web.multipart.MultipartFile
 
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
@@ -56,7 +57,7 @@ class AuthController(
 @RequestMapping("/user")
 class UserController(
     private val userService: UserService
-){
+) {
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
