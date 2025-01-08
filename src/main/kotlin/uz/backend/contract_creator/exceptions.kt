@@ -3,7 +3,7 @@ package uz.backend.contract_creator
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.ResourceBundleMessageSource
 
-sealed class BaseExceptionHandler : RuntimeException(){
+sealed class BaseExceptionHandler : RuntimeException() {
 
     abstract fun errorCode(): ErrorCodes
 
@@ -24,10 +24,17 @@ sealed class BaseExceptionHandler : RuntimeException(){
 
 }
 
-class UserNotFoundException():BaseExceptionHandler(){
+class UserNotFoundException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.USER_NOT_FOUND
 }
 
-class BadCredentialsException():BaseExceptionHandler(){
+class BadCredentialsException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.BAD_CREDENTIALS
+}
+
+class FieldNotFoundException() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.FIELD_NOT_FOUND
+}
+class ExistsFieldException() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.EXISTS_FIELD
 }
