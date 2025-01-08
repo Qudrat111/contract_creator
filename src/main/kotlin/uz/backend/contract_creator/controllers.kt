@@ -6,7 +6,6 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.multipart.MultipartFile
-import kotlin.reflect.jvm.internal.impl.descriptors.Visibilities.Private
 
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
@@ -22,7 +21,7 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 @RequestMapping("/field")
 class FieldController(
     private val service: FieldService,
-){
+) {
     @PostMapping()
     fun create(@RequestBody @Valid fieldDTO: FieldDTO) = service.createField(fieldDTO)
 
@@ -30,10 +29,11 @@ class FieldController(
     fun get(@PathVariable id: Long) = service.getFieldById(id)
 
     @GetMapping
-    fun getAll() =service.getAllField()
+    fun getAll() = service.getAllField()
 
     @PutMapping("{id}")
-    fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) = service.updateField(id, fieldUpdateDTO)
+    fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) =
+        service.updateField(id, fieldUpdateDTO)
 
 }
 
@@ -49,4 +49,13 @@ class AuthController(
     @PostMapping("sign-in")
     fun signIn(@RequestBody @Valid signInDTO: SignInDTO) = authService.signIn(signInDTO)
 
+}
+
+@RestController
+@RequestMapping("/template")
+class TemplateController(private val docFileService: DocFileService) {
+
+    @PostMapping("add-template?{name}")
+    fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
+        docFileService.createNewTemplate(file, name)
 }

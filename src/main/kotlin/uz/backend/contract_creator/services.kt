@@ -16,10 +16,8 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import sun.security.jgss.GSSUtil.login
 import java.io.*
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.*
 
@@ -72,22 +70,21 @@ class AuthServiceImpl(
     }
 
 
-
     override fun loadUserByUsername(username: String): UserDetails {
 
-       return userRepository.findByUserName(username) ?: throw UserNotFoundException( )
+        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
     }
 }
 
-interface UserService{
-    fun changeRole(userId: Long, role: RoleEnum) : UserDTO
+interface UserService {
+    fun changeRole(userId: Long, role: RoleEnum): UserDTO
     fun getAllUsers(): List<UserDTO>
 
 }
 
 class UserServiceImpl(
     private val userRepository: UserRepository
-):UserService{
+) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -96,12 +93,11 @@ class UserServiceImpl(
     }
 
     override fun getAllUsers(): List<UserDTO> {
-       return userRepository.findAllNotDeleted().map {
-           UserDTO.toResponse(it)
-       }
+        return userRepository.findAllNotDeleted().map {
+            UserDTO.toResponse(it)
+        }
     }
 }
-
 
 
 @Service
@@ -109,19 +105,15 @@ class DocFileService(
     private val templateRepository: TemplateRepository,
     private val contractRepository: ContractRepository
 ) {
-    fun readDocFile(filePath: String): XWPFDocument {
+    private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
             return XWPFDocument(inputStream)
         }
     }
 
-    fun changeAllKeysToValues(templateId: Long, keyValueMap: Map<String, String>) {
+    private fun changeAllKeysToValues(templateId: Long, outputFilePath: String, keyValueMap: Map<String, String>) {
         val templateOpt = templateRepository.findByIdAndDeletedFalse(templateId)
         templateOpt?.let { template ->
-            val outputFilePath = "./file/contracts/"
-//            file.inputStream.use { inputStream ->
-//                Files.copy(inputStream, Paths.get(filePath))
-//            }
             val filePath = template.filePath
             val document = readDocFile(filePath)
             val paragraphs = document.paragraphs
@@ -129,7 +121,7 @@ class DocFileService(
                 for (run in paragraph.runs)
                     if (run != null)
                         processRun(run, keyValueMap)
-            FileOutputStream(filePath).use { outputStream ->
+            FileOutputStream(outputFilePath).use { outputStream ->
                 document.write(outputStream)
             }
             document.close()
@@ -145,7 +137,6 @@ class DocFileService(
         return keys
     }
 
-    // @RequestParam("file") MultipartFile file
     fun createNewTemplate(file: MultipartFile, name: String) {
         val filePath = "./files/templates/${file.originalFilename}-" + UUID.randomUUID()
         file.inputStream.use { inputStream ->
@@ -153,26 +144,32 @@ class DocFileService(
         }
         val keys = getKeys(filePath)
         val fields = getFieldsByKeys(keys)
-        Template(name, filePath, fields)
+        templateRepository.save(Template(name, filePath, fields))
     }
 
-    fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
+    private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
         return keys.map { Field(it, TypeEnum.STRING) }
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
-        downloadContractDTO.run {
-            contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
+        downloadContractDTO.let {
+            contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
                 contract.run {
-                    val filePath = Paths.get(contractFilePath)
+                    var filePathStr = contractFilePath.substringBeforeLast(".")
+                    val fileType = when (it.fileType.lowercase()) {
+                        "pdf" -> "pdf"
+                        "docx" -> "docx"
+                        else -> throw RuntimeException("invalid file type")
+                    }
+                    filePathStr = "$filePathStr.$fileType"
+                    val filePath = Paths.get(filePathStr)
                     val resource = UrlResource(filePath.toUri())
 
-                    //TODO
                     if (resource.exists() && resource.isReadable) {
                         return ResponseEntity.ok()
                             .header(
                                 HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"contract_$contractId.pdf\""
+                                "attachment; filename=\"contract_${it.contractId}.${fileType}\""
                             )
                             .body(resource)
                     }
@@ -186,11 +183,21 @@ class DocFileService(
         addContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                 template.let {
-                    val fileName = it.filePath.substringAfterLast("/")
-                    val contractFilePath = "./files/contracts/${fileName}-" + UUID.randomUUID()
-//                    file.inputStream.use { inputStream ->
-//                        Files.copy(inputStream, Paths.get(filePath))
-//                    }
+                    var fileName = it.filePath.substringAfterLast("/")
+                    val contractFilePathDocx = "./files/contracts/${fileName}"
+                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+
+                    changeAllKeysToValues(templateId, contractFilePathDocx, fields)
+
+                    fileName = fileName.substringBeforeLast(".")
+                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+                    convertWordToPdf(
+                        Files.newInputStream(Paths.get(contractFilePathDocx)),
+                        Files.newOutputStream(Paths.get(contractFilePathPdf))
+                    )
+//                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+
+                    contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
                 }
             }
         }
