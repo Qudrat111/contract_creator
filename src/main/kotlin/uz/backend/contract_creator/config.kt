@@ -12,7 +12,7 @@ import java.util.*
 @Configuration
 class WebMvcConfig : WebMvcConfigurer {
     @Bean
-    fun localeResolver() = SessionLocaleResolver().apply { setDefaultLocale(Locale("ru")) }
+    fun localeResolver() = SessionLocaleResolver().apply { setDefaultLocale(Locale("uz")) }
 
     @Bean
     fun errorMessageSource() = ResourceBundleMessageSource().apply {
