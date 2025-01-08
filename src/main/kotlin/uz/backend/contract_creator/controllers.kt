@@ -68,5 +68,7 @@ class TemplateController(private val docFileService: DocFileService) {
 class ContractController(
     private val docFileService: DocFileService,
 ) {
+    @GetMapping("get-by-clint/{clientPassport}")
+    fun getByClint(@PathVariable clientPassport: String) =docFileService.getContractsByClint(clientPassport)
 
 }

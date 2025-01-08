@@ -71,3 +71,15 @@ data class AddContractDTO(
     @NotNull val fields: Map<String, String>,
     @NotNull val clientPassport: String
 )
+
+data class ContractDto(
+    val contractId: Long,
+    val templateName: String,
+    val clientPassport: String,
+) {
+    companion object {
+        fun toDTO(it: Contract): ContractDto{
+            return ContractDto(it.id!!, it.template?.name!!, it.clientPassport)
+        }
+    }
+}

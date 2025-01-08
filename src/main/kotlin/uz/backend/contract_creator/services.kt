@@ -302,6 +302,10 @@ class DocFileService(
         }
         return keys
     }
+
+    fun getContractsByClint(clientPassport: String): List<ContractDto> {
+        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map {ContractDto.toDTO(it)}
+    }
 }
 
 @Service

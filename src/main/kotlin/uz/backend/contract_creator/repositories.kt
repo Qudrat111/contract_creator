@@ -65,6 +65,9 @@ interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
 }
 
-interface ContractRepository : BaseRepository<Contract>
+interface ContractRepository : BaseRepository<Contract> {
+    fun findByClientPassportAndDeletedFalse(clientPassport: String): MutableList<Contract>
+}
+
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue>
 
