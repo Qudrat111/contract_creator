@@ -57,7 +57,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 @Repository
 interface UserRepository: BaseRepository<User>{
 
-    fun findByUsername(username: String): User?
+    fun findByUserName(username: String): User?
 }
 
 interface TemplateRepository: BaseRepository<Template>
