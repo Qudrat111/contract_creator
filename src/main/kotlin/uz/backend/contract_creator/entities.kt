@@ -67,6 +67,7 @@ class Contract(
     @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
+    @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
     ) : BaseEntity()
 
 @Entity

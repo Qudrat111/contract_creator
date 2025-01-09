@@ -123,7 +123,8 @@ class UserServiceImpl(
 @Service
 class DocFileService(
     private val templateRepository: TemplateRepository,
-    private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val userRepository: UserRepository
 ) {
     fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -281,7 +282,9 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.getContractsById(id)?.let {
+        val optional = userRepository.findById(id)
+        if(optional.isEmpty) throw UserNotFoundException()
+        contractRepository.findAllByCreatedBy(optional.get()).let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
@@ -291,7 +294,7 @@ class DocFileService(
 
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.findAllNotDeleted()?.let {
+        contractRepository.findAllNotDeleted().let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
