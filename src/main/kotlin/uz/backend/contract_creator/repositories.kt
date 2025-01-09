@@ -79,6 +79,8 @@ interface ContractRepository : BaseRepository<Contract> {
     fun getContractsById(@Param("id") id: Long): List<Contract>?
 
 }
-
+@Repository
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue>
 
+@Repository
+interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>

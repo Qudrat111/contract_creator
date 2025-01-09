@@ -67,8 +67,6 @@ class Contract(
     @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
-    @ElementCollection var allowedOperators: MutableList<Long> = mutableListOf(),
-
     ) : BaseEntity()
 
 @Entity
@@ -77,5 +75,12 @@ class ContractFieldValue(
     @ManyToOne val contract: Contract,
     @OneToOne val field: Field,
     @Column(nullable = false) val value: String,
-
     ) : BaseEntity()
+
+@Entity
+class ContractAllowedUser(
+
+    @ManyToOne @JoinColumn(nullable = false) val operator: User,
+    @ManyToOne @JoinColumn(nullable = false) val contract: Contract
+
+): BaseEntity()
