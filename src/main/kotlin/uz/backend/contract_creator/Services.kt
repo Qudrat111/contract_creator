@@ -307,9 +307,15 @@ class DocFileService(
                         changeAllKeysToValues(templateId, contractFilePathDocx, fields)
                         val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
 
-                        val contractFieldValueMap = fields.map { fieldEntry ->
-                            val fieldOpt = fieldRepository.findByName(fieldEntry.key)
-                            fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+//                        val contractFieldValueMap = fields.map { fieldEntry ->
+//                            val fieldOpt = fieldRepository.findByName(fieldEntry.key)
+//                            fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+//                        }
+                        val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
+                        for (fieldEntry in fields.entries) {
+                            fieldRepository.findByName(fieldEntry.key)?.let {
+                                contractFieldValueMap.add(ContractFieldValue(contract, it, fieldEntry.value))
+                            }
                         }
                         contractFieldValueRepository.saveAll(contractFieldValueMap)
 
