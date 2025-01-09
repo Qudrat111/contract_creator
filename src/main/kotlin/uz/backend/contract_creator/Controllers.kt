@@ -14,8 +14,7 @@ import org.springframework.web.multipart.MultipartFile
 @ControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
 
-    @ResponseStatus(value = HttpStatus.NOT_FOUND)
-    @ResponseBody
+    @ExceptionHandler(BaseExceptionHandler::class)
     fun handleAccountException(ex: BaseExceptionHandler): BaseMessage {
         return ex.getErrorMessage(errorMessageSource)
     }
@@ -34,12 +33,12 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
         return ResponseEntity.badRequest().body(BaseMessage(400, errors))
     }
 
-    @ExceptionHandler(Exception::class)
-    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-    @ResponseBody
-    fun handleGeneralException(ex: Exception): BaseMessage {
-        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
-    }
+//    @ExceptionHandler(Exception::class)
+//    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+//    @ResponseBody
+//    fun handleGeneralException(ex: Exception): BaseMessage {
+//        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
+//    }
 }
 
 

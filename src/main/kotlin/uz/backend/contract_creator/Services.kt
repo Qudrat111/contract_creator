@@ -223,7 +223,7 @@ class DocFileService(
     fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
             val filePath = Paths.get("attaches/${it.filePath}").normalize()
-            var resource: Resource? = null
+            var resource: Resource?
             resource = UrlResource(filePath.toUri())
             if (!resource.exists()) {
                 throw FileNotFoundException("File not found: ${it.filePath}")
@@ -331,7 +331,7 @@ class DocFileService(
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val filePath = Paths.get("attaches/${it.contractFilePath}").normalize()
-            var resource: Resource? = null
+            var resource: Resource?
             resource = UrlResource(filePath.toUri())
             if (!resource.exists()) {
                 throw FileNotFoundException("File not found: ${it.contractFilePath}")
