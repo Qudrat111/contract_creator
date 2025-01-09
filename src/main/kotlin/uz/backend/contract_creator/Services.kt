@@ -1,5 +1,6 @@
 package uz.backend.contract_creator
 
+import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.*
 import org.docx4j.Docx4J
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
@@ -108,7 +109,7 @@ class UserServiceImpl(
 
     override fun givePermission(userId: Long, contractId: Long) {
         val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
-        if (userRepository.existsById(userId)) contract.allowedOperators.add(userId)
+        if (userRepository.existsById(userId)) contract.allowedOperators= (userId)
         else throw UserNotFoundException()
     }
 }
@@ -258,15 +259,15 @@ class DocFileService(
         downloadContractDTO.let {
             contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
                 contract.run {
-//                    var filePathStr = contractFilePath.substringBeforeLast(".")
-//                    val fileType = when (it.fileType.lowercase()) {
-//                        "pdf" -> "pdf"
-//                        "docx" -> "docx"
-//                        else -> throw RuntimeException("invalid file type")
-//                    }
-//                    filePathStr = "$filePathStr.$fileType"
+                    var filePathStr = contractFilePath.substringBeforeLast(".")
+                    val fileType = when (it.fileType.lowercase()) {
+                        "pdf" -> "pdf"
+                        "docx" -> "docx"
+                        else -> throw RuntimeException("invalid file type")
+                    }
+                    filePathStr = "$filePathStr.$fileType"
 
-                    val filePath = Paths.get(contractFilePath)
+                    val filePath = Paths.get(filePathStr)
                     val resource = UrlResource(filePath.toUri())
 
                     if (resource.exists() && resource.isReadable) {
@@ -281,6 +282,7 @@ class DocFileService(
         throw RuntimeException("something went wrong")
     }
 
+    @Transactional
     fun addContract(createContractDTO: AddContractDTO): Contract {
         createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
@@ -302,13 +304,12 @@ class DocFileService(
                     }
                     contractFieldValueRepository.saveAll(contractFieldValueMap)
 
-//                    fileName = fileName.substringBeforeLast(".")
-//                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-//                    convertWordToPdf(
-//                        Files.newInputStream(Paths.get(contractFilePathDocx)),
-//                        Files.newOutputStream(Paths.get(contractFilePathPdf))
-//                    )
-//                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+                    fileName = fileName.substringBeforeLast(".")
+                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+                    convertWordToPdf(
+                        Files.newInputStream(Paths.get(contractFilePathDocx)),
+                        Files.newOutputStream(Paths.get(contractFilePathPdf))
+                    )
 
                     return contract
                 }

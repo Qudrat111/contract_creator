@@ -68,6 +68,7 @@ interface FieldRepository : BaseRepository<Field> {
     fun findByName(name: String): Field?
 }
 
+@Repository
 interface ContractRepository : BaseRepository<Contract> {
     fun findByClientPassportAndDeletedFalse(clientPassport: String): MutableList<Contract>
 

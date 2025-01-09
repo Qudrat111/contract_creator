@@ -23,11 +23,10 @@ repositories {
 }
 
 dependencies {
-    implementation("org.docx4j:docx4j-core:11.5.1")
-    implementation("org.docx4j:docx4j-export-fo:11.5.1")
-    implementation("org.apache.xmlgraphics:fop:2.10")
-
-    implementation("xerces:xercesImpl:2.12.2")
+    implementation("org.docx4j:docx4j-JAXB-Internal:8.3.8")
+    implementation("org.docx4j:docx4j-export-fo:11.4.9")
+    implementation("org.docx4j:docx4j-JAXB-MOXy:11.4.9")
+    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.9")
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
@@ -50,7 +49,6 @@ dependencies {
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.google.zxing:javase:3.5.2")
     implementation("org.apache.poi:poi-ooxml:5.2.3")
-    implementation("com.aspose:aspose-words:24.12")
 }
 
 kotlin {
