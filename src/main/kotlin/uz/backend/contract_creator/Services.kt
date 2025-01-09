@@ -211,7 +211,7 @@ class DocFileService(
         }
         val keys = getKeys(filePath)
         val fields = getFieldsByKeys(keys)
-        templateRepository.save(Template(name, filePath, fields))
+        templateRepository.save(Template(name, filePath, fields.toMutableList()))
     }
 
     fun deleteTemplate(id: Long) {
@@ -233,8 +233,10 @@ class DocFileService(
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body<Resource>(resource)
+
         }
     }
+
     fun getAllTemplates(): List<TemplateDto> {
         val listTemplates = mutableListOf<TemplateDto>()
         templateRepository.findAllNotDeleted().let {
@@ -244,7 +246,6 @@ class DocFileService(
         }
         return listTemplates
     }
-
 
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
@@ -421,6 +422,7 @@ class DocFileService(
 @Service
 class FieldServiceImpl(
     private val fieldRepository: FieldRepository,
+    private val templateRepository: TemplateRepository,
 ) : FieldService {
     override fun createField(dto: FieldDTO) {
         dto.run {
@@ -440,18 +442,27 @@ class FieldServiceImpl(
 
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
         val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
-        updateDto.run {
-            name?.let {
-                if (fieldRepository.existsByName(name)) throw ExistsFieldException()
-                field.name = it
-            }
-            type?.let { field.type = TypeEnum.valueOf(it.uppercase()) }
+        val template = templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()
+        val fields = template.fields
+
+        if (!fields.contains(field)) {
+            throw FieldNotBelongToTemplate()
         }
-        fieldRepository.save(field)
+
+
+        val newField :Field;
+        updateDto.run {
+            if (fieldRepository.existsByName(name!!)) throw ExistsFieldException()
+            newField = Field(name, TypeEnum.valueOf(type!!.uppercase()))
+        }
+        val saveField = fieldRepository.save(newField)
+        val index = fields.indexOf(field)
+        fields[index]=saveField
+        templateRepository.save(template)
+
     }
 
     override fun deleteField(id: Long) {
         fieldRepository.trash(id) ?: FieldNotFoundException()
     }
 }
-
