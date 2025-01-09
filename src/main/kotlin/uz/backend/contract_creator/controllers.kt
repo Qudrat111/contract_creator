@@ -1,8 +1,11 @@
 package uz.backend.contract_creator
 
 import jakarta.validation.Valid
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.ResourceBundleMessageSource
+import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.multipart.MultipartFile
@@ -11,8 +14,26 @@ import org.springframework.web.multipart.MultipartFile
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
 
     @ExceptionHandler(BaseExceptionHandler::class)
-    fun handleAccountException(exception: BaseExceptionHandler): ResponseEntity<BaseMessage> {
-        return ResponseEntity.badRequest().body(exception.getErrorMessage(errorMessageSource))
+    @ResponseStatus(value = HttpStatus.NOT_FOUND)
+    @ResponseBody
+    fun handleAccountException(exception: BaseExceptionHandler): BaseMessage {
+        return exception.getErrorMessage(errorMessageSource)
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
+        val errors = exception.bindingResult.fieldErrors.joinToString("\n") {
+            "(${it.field}) ${it.defaultMessage} (${errorMessageSource.getMessage("REJECTED_VALUE", arrayOf(),
+                LocaleContextHolder.getLocale())}: ${it.rejectedValue})"
+        }
+        return ResponseEntity.badRequest().body(BaseMessage(400, errors))
+    }
+
+    @ExceptionHandler(Exception::class)
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    fun handleGeneralException(ex: Exception): BaseMessage {
+        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
     }
 }
 
@@ -55,19 +76,21 @@ class AuthController(
 @RequestMapping("/user")
 class UserController(
     private val userService: UserService
-){
+) {
     @PutMapping("change-role/{userId}")
     fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
 
     @GetMapping()
-    fun getAll()=userService.getAllUsers()
+    fun getAll() = userService.getAllUsers()
 
     @GetMapping("{userId}")
     fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
 
     @PutMapping("give-permission")
-    fun givePermission(@RequestParam userId: Long,
-                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
+    fun givePermission(
+        @RequestParam userId: Long,
+        @RequestParam contractId: Long
+    ) = userService.givePermission(userId, contractId)
 }
 
 @RestController

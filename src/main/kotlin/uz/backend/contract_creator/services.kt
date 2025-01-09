@@ -120,7 +120,8 @@ class UserServiceImpl(
 class DocFileService(
     private val templateRepository: TemplateRepository,
     private val contractRepository: ContractRepository,
-    private val fieldRepository: FieldRepository
+    private val fieldRepository: FieldRepository,
+    private val contractFieldValueRepository: ContractFieldValueRepository
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -133,41 +134,34 @@ class DocFileService(
         templateOpt?.let { template ->
             val filePath = template.filePath
             val document = readDocFile(filePath)
-//            for (paragraph in document.paragraphs)
-//                for (run in paragraph.runs)
-//                    for (run in paragraph.runs)
-//                        processRun(run, keyValueMap)
-//            for (table in document.tables)
-//                for (row in table.rows)
-//                    for (cell in row.tableCells)
-//                        for (paragraph in cell.paragraphs)
-//                            for (run in paragraph.runs)
-//                                processRun(run, keyValueMap)
-//            for (table in document.tables)
-//                for (row in table.rows)
-//                    for (tableCell in row.tableCells)
-//                        for (paragraph in tableCell.paragraphs)
-//                            processRun(paragraph,keys)
+
+            processDocument(document, keyValueMap)
+
             FileOutputStream(outputFilePath).use { outputStream ->
                 document.write(outputStream)
             }
             document.close()
         }
     }
-    private fun processRun(paragraph: XWPFParagraph, keyValueMap: Map<String, String>): String? {
+
+
+    private fun processParagraph(paragraph: XWPFParagraph, keyValueMap: Map<String, String>): String? {
         paragraph.run {
-            if (text.contains("##")) {
-                val firstIndex = text.indexOf("##") + 2
+            val firstIndex = text.indexOf("##") + 2
+            if (firstIndex > 1) {
                 val lastIndex = text.indexOf("##", firstIndex)
                 if (lastIndex > -1) {
                     val key = text.substring(firstIndex, lastIndex)
                     keyValueMap[key]?.let { value ->
-                        var newText: String? = text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
-                        if (text.substring(lastIndex + 2).contains("##")) {
-                            newText = processRun(this, keyValueMap)
+                        var newText: String? =
+                            text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
+                        if (text.indexOf("##", lastIndex + 2) > -1) {
+                            newText = processParagraph(this, keyValueMap)
                         }
-                        paragraph.runs
-//                        setText(newText,0)
+                        for (run in paragraph.runs) {
+                            run.setText("", 0)
+                        }
+                        paragraph.createRun().setText(newText)
                         return newText
                     }
                 }
@@ -175,6 +169,31 @@ class DocFileService(
             }
         }
         return null
+    }
+
+    private fun processDocument(document: XWPFDocument, keyValueMap: Map<String, String>) {
+        document.run {
+            paragraphs.forEach { processParagraph(it, keyValueMap) }
+
+            tables.forEach { table ->
+                table.rows.forEach { row ->
+                    row.tableCells.forEach { cell ->
+                        cell.paragraphs.forEach { paragraph ->
+                            processParagraph(
+                                paragraph,
+                                keyValueMap
+                            )
+                        }
+                    }
+                }
+            }
+            headerList.forEach { header ->
+                header.paragraphs.forEach { processParagraph(it, keyValueMap) }
+            }
+            footerList.forEach { footer ->
+                footer.paragraphs.forEach { processParagraph(it, keyValueMap) }
+            }
+        }
     }
 
     fun getKeysByTemplateId(templateId: Long): List<String> {
@@ -193,7 +212,7 @@ class DocFileService(
 //                listTemplates.add(TemplateDto())
 //            }
 //        }
-//        return listTemplates
+//        return listTemplates}
 
     fun createNewTemplate(file: MultipartFile, name: String) {
         val filename = file.originalFilename!!.substringBeforeLast(".") + "-" + UUID.randomUUID() + ".docx"
@@ -218,11 +237,12 @@ class DocFileService(
         }
     }
 
-
-//    }
-
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
-        return keys.map { fieldRepository.save(Field(it, TypeEnum.STRING)) }
+        return keys.map {
+            fieldRepository.findByName(it) ?: run {
+                fieldRepository.save(Field(it, TypeEnum.STRING))
+            }
+        }
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
@@ -257,12 +277,19 @@ class DocFileService(
     fun addContract(createContractDTO: CreateContractDTO): Contract {
         createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-                template.let {
-                    var fileName = it.filePath.substringAfterLast("/")
+                template.let { it ->
+                    val fileName = it.filePath.substringAfterLast("/")
                     val contractFilePathDocx = "./files/contracts/${fileName}"
                     Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
                     changeAllKeysToValues(templateId, contractFilePathDocx, fields)
+                    val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+
+                    val contractFieldValueMap = fields.map { fieldEntry ->
+                        val fieldOpt = fieldRepository.findByName(fieldEntry.key)
+                        fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+                    }
+                    contractFieldValueRepository.saveAll(contractFieldValueMap)
 
 //                    fileName = fileName.substringBeforeLast(".")
 //                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
@@ -272,7 +299,6 @@ class DocFileService(
 //                    )
 //                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
                     return contract
                 }
             }
