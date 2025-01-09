@@ -43,3 +43,11 @@ class ExistsFieldException() : BaseExceptionHandler() {
 class FileNotFoundException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FILE_NOT_FOUND
 }
+
+class TemplateNotFoundException() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.TEMPLATE_NOT_FOUND
+}
+
+class FieldNotBelongToTemplate() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.FILED_NOT_BELONG_TEMPLATE
+}

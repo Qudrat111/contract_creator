@@ -69,6 +69,7 @@ data class FieldDTO(
 }
 
 data class FieldUpdateDTO(
+    val templateId: Long,
     val name: String?,
     val type: String?
 )
