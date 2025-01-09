@@ -1,8 +1,6 @@
 package uz.backend.contract_creator
 
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import org.apache.poi.xwpf.usermodel.XWPFParagraph
-import org.apache.poi.xwpf.usermodel.XWPFRun
+import org.apache.poi.xwpf.usermodel.*
 import org.docx4j.Docx4J
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import org.springframework.core.io.Resource
@@ -48,8 +46,7 @@ class AuthServiceImpl(
     private val jwtProvider: JwtProvider
 ) : AuthService {
     override fun logIn(signInDTO: LogInDTO): String {
-        val authentication =
-            UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
+        val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
 
@@ -82,16 +79,15 @@ class AuthServiceImpl(
 interface UserService {
     fun changeRole(userId: Long, role: RoleEnum): UserDTO
     fun getAllUsers(): List<UserDTO>
-    fun getOneUser(userId: Long) : UserDTO
-    fun givePermission(userId: Long, contractId:Long)
-
+    fun getOneUser(userId: Long): UserDTO
+    fun givePermission(userId: Long, contractId: Long)
 }
 
 @Service
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val contractRepository: ContractRepository
-):UserService{
+) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -100,29 +96,30 @@ class UserServiceImpl(
     }
 
     override fun getAllUsers(): List<UserDTO> {
-       return userRepository.findAllNotDeleted().map {
-           UserDTO.toResponse(it)
-       }
+        return userRepository.findAllNotDeleted().map {
+            UserDTO.toResponse(it)
+        }
     }
 
     override fun getOneUser(userId: Long): UserDTO {
-        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
+        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
         return UserDTO.toResponse(user)
     }
 
     override fun givePermission(userId: Long, contractId: Long) {
         val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
-        if(userRepository.existsById(userId))contract.allowedOperators.add(userId)
-         else throw UserNotFoundException()
+        if (userRepository.existsById(userId)) contract.allowedOperators.add(userId)
+        else throw UserNotFoundException()
     }
 }
 
 
-
 @Service
 class DocFileService(
-    private val templateRepository: TemplateRepository,
-    private val contractRepository: ContractRepository
+    private val templateRepository: TemplateRepository, private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val fieldRepository: FieldRepository,
+    private val contractFieldValueRepository: ContractFieldValueRepository
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -135,11 +132,9 @@ class DocFileService(
         templateOpt?.let { template ->
             val filePath = template.filePath
             val document = readDocFile(filePath)
-            val paragraphs = document.paragraphs
-            for (paragraph in paragraphs)
-                for (run in paragraph.runs)
-                    if (run != null)
-                        processRun(run, keyValueMap)
+
+            processDocument(document, keyValueMap)
+
             FileOutputStream(outputFilePath).use { outputStream ->
                 document.write(outputStream)
             }
@@ -147,17 +142,69 @@ class DocFileService(
         }
     }
 
+
+    private fun processParagraph(paragraph: XWPFParagraph, keyValueMap: Map<String, String>): String? {
+        paragraph.run {
+            val firstIndex = text.indexOf("##") + 2
+            if (firstIndex > 1) {
+                val lastIndex = text.indexOf("##", firstIndex)
+                if (lastIndex > -1) {
+                    val key = text.substring(firstIndex, lastIndex)
+                    keyValueMap[key]?.let { value ->
+                        var newText: String? =
+                            text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
+                        if (text.indexOf("##", lastIndex + 2) > -1) {
+                            newText = processParagraph(this, keyValueMap)
+                        }
+                        for (run in paragraph.runs) {
+                            run.setText("", 0)
+                        }
+                        paragraph.createRun().setText(newText)
+                        return newText
+                    }
+                }
+                return text
+            }
+        }
+        return null
+    }
+
+    private fun processDocument(document: XWPFDocument, keyValueMap: Map<String, String>) {
+        document.run {
+            paragraphs.forEach { processParagraph(it, keyValueMap) }
+
+            tables.forEach { table ->
+                table.rows.forEach { row ->
+                    row.tableCells.forEach { cell ->
+                        cell.paragraphs.forEach { paragraph ->
+                            processParagraph(
+                                paragraph,
+                                keyValueMap
+                            )
+                        }
+                    }
+                }
+            }
+            headerList.forEach { header ->
+                header.paragraphs.forEach { processParagraph(it, keyValueMap) }
+            }
+            footerList.forEach { footer ->
+                footer.paragraphs.forEach { processParagraph(it, keyValueMap) }
+            }
+        }
+    }
+
     fun getKeysByTemplateId(templateId: Long): List<String> {
         val keys = mutableListOf<String>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-            for (field in template.fields)
-                keys.add(field.name)
+            for (field in template.fields) keys.add(field.name)
         }
         return keys
     }
 
     fun createNewTemplate(file: MultipartFile, name: String) {
-        val filePath = "./files/templates/${file.originalFilename}-" + UUID.randomUUID()
+        val filename = file.originalFilename!!.substringBeforeLast(".") + "-" + UUID.randomUUID() + ".docx"
+        val filePath = "./files/templates/$filename"
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, Paths.get(filePath))
         }
@@ -185,10 +232,8 @@ class DocFileService(
             return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
                 .body<Resource>(resource)
-
         }
     }
-
     fun getAllTemplates(): List<TemplateDto> {
         val listTemplates = mutableListOf<TemplateDto>()
         templateRepository.findAllNotDeleted().let {
@@ -200,32 +245,35 @@ class DocFileService(
     }
 
 
+
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
-        return keys.map { Field(it, TypeEnum.STRING) }
+        return keys.map {
+            fieldRepository.findByName(it) ?: run {
+                fieldRepository.save(Field(it, TypeEnum.STRING))
+            }
+        }
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
         downloadContractDTO.let {
             contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
                 contract.run {
-                    var filePathStr = contractFilePath.substringBeforeLast(".")
-                    val fileType = when (it.fileType.lowercase()) {
-                        "pdf" -> "pdf"
-                        "docx" -> "docx"
-                        else -> throw RuntimeException("invalid file type")
-                    }
-                    filePathStr = "$filePathStr.$fileType"
+//                    var filePathStr = contractFilePath.substringBeforeLast(".")
+//                    val fileType = when (it.fileType.lowercase()) {
+//                        "pdf" -> "pdf"
+//                        "docx" -> "docx"
+//                        else -> throw RuntimeException("invalid file type")
+//                    }
+//                    filePathStr = "$filePathStr.$fileType"
 
-                    val filePath = Paths.get(filePathStr)
+                    val filePath = Paths.get(contractFilePath)
                     val resource = UrlResource(filePath.toUri())
 
                     if (resource.exists() && resource.isReadable) {
-                        return ResponseEntity.ok()
-                            .header(
-                                HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"contract_${it.contractId}.${fileType}\""
-                            )
-                            .body(resource)
+                        return ResponseEntity.ok().header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"contract_${it.contractId}.docx\""
+                        ).body(resource)
                     }
                 }
             }
@@ -233,28 +281,40 @@ class DocFileService(
         throw RuntimeException("something went wrong")
     }
 
-    fun addContract(addContractDTO: AddContractDTO) {
-        addContractDTO.run {
+    fun addContract(createContractDTO: CreateContractDTO): Contract {
+        createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-                template.let {
+                template.let { it ->
                     var fileName = it.filePath.substringAfterLast("/")
+                    val fileType = fileName.substringAfterLast(".")
+                    fileName = fileName.substringBeforeLast(".")
+                    fileName = fileName.substring(0, fileName.length - 36)
+                    fileName = fileName + UUID.randomUUID() + "." + fileType
                     val contractFilePathDocx = "./files/contracts/${fileName}"
                     Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
                     changeAllKeysToValues(templateId, contractFilePathDocx, fields)
+                    val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
 
-                    fileName = fileName.substringBeforeLast(".")
-                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    convertWordToPdf(
-                        Files.newInputStream(Paths.get(contractFilePathDocx)),
-                        Files.newOutputStream(Paths.get(contractFilePathPdf))
-                    )
+                    val contractFieldValueMap = fields.map { fieldEntry ->
+                        val fieldOpt = fieldRepository.findByName(fieldEntry.key)
+                        fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+                    }
+                    contractFieldValueRepository.saveAll(contractFieldValueMap)
+
+//                    fileName = fileName.substringBeforeLast(".")
+//                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+//                    convertWordToPdf(
+//                        Files.newInputStream(Paths.get(contractFilePathDocx)),
+//                        Files.newOutputStream(Paths.get(contractFilePathPdf))
+//                    )
 //                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                    return contract
                 }
             }
         }
+        throw RuntimeException("template not found")
     }
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
@@ -301,65 +361,53 @@ class DocFileService(
         Docx4J.toPDF(wordMLPackage, outputStream)
     }
 
-
-    private fun processRun(run: XWPFRun, keyValueMap: Map<String, String>): String? {
-        val text = run.text()
-        if (text.contains("##")) {
-            val firstIndex = text.indexOf("##") + 2
-            if (text.indexOf("##", firstIndex) > -1) {
-                val lastIndex = text.indexOf("##", firstIndex)
-
-                val key = text.substring(firstIndex, lastIndex)
-                val valueOpt = keyValueMap[key]
-                valueOpt?.let { value ->
-                    var newText: String? = text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
-                    if (text.substring(lastIndex + 2).contains("##")) {
-                        run.setText(newText)
-                        newText = processRun(run, keyValueMap)
-                    }
-                    println(newText)
-                    return newText
-                } ?: run { return text }
-            } else return text
-        }
-        return null
+    private fun getKey(run: XWPFRun): String? {
+        return getKey(run.text())
     }
 
-    private fun getKey(run: XWPFRun): String? {
-        var keyTemp = run.text()
-        if (keyTemp.contains("##")) {
-            val firstIndex = keyTemp.indexOf("##") + 2
-            keyTemp = keyTemp.substring(firstIndex)
-            if (keyTemp.contains("##")) {
-                val lastIndex = keyTemp.indexOf("##") + keyTemp.length + 2
-                keyTemp = run.text().substring(firstIndex, lastIndex)
-                return keyTemp
+    private fun getKey(text: String): String? {
+        if (text.contains("##")) {
+            val firstIndex = text.indexOf("##") + 2
+            if (text.substring(firstIndex).contains("##")) {
+                val lastIndex = text.indexOf("##", firstIndex)
+                return text.substring(firstIndex, lastIndex)
             }
         }
         return null
     }
 
+    private fun getKey(run: XWPFTableCell): String? {
+        return getKey(run.text)
+    }
+
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
         val keys = mutableListOf<String>()
-        for (paragraph in document.paragraphs)
-            keys.addAll(getKeys(paragraph))
+        for (table in document.tables)
+            keys.addAll(getKeys(table))
+        keys.addAll(getKeys(document.paragraphs))
+        return keys
+    }
+
+    private fun getKeys(table: XWPFTable): MutableList<String> {
+        val keys = mutableListOf<String>()
+        for (row in table.rows)
+            for (tableCell in row.tableCells) {
+                getKey(tableCell)?.let { keys.add(it) }
+            }
         return keys
     }
 
     private fun getKeys(paragraphs: List<XWPFParagraph>): MutableList<String> {
         val keys = mutableListOf<String>()
-        for (paragraph in paragraphs)
-            keys.addAll(getKeys(paragraph))
+        for (paragraph in paragraphs) keys.addAll(getKeys(paragraph))
         return keys
     }
 
     private fun getKeys(paragraph: XWPFParagraph): MutableList<String> {
         val keys = mutableListOf<String>()
         for (run in paragraph.runs) {
-            val key = getKey(run)
-            if (key != null)
-                keys.add(key)
+            getKey(run)?.let { keys.add(it) }
         }
         return keys
     }
@@ -405,3 +453,4 @@ class FieldServiceImpl(
         fieldRepository.trash(id) ?: FieldNotFoundException()
     }
 }
+

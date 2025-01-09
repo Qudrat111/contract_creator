@@ -73,7 +73,7 @@ data class FieldUpdateDTO(
     val type: String?
 )
 
-data class DownloadContractDTO(
+data class DownloadContractDTO (
     @NotNull val contractId: Long,
     @NotNull val fileType: String
 )

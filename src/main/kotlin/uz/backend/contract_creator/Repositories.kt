@@ -65,6 +65,7 @@ interface UserRepository : BaseRepository<User> {
 interface TemplateRepository : BaseRepository<Template>
 interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
+    fun findByName(name: String): Field?
 }
 
 interface ContractRepository : BaseRepository<Contract> {
