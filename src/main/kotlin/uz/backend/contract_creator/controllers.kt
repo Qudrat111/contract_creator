@@ -23,7 +23,7 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 class FieldController(
     private val service: FieldService,
 ) {
-    @PostMapping()
+    @PostMapping
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun create(@RequestBody @Valid fieldDTO: FieldDTO) = service.createField(fieldDTO)
 
