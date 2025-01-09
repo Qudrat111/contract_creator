@@ -288,7 +288,7 @@ class DocFileService(
 
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.findAllNotDeleted().let {
+        contractRepository.findAllNotDeleted()?.let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
