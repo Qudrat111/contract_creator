@@ -90,7 +90,8 @@ interface UserService{
 @Service
 class UserServiceImpl(
     private val userRepository: UserRepository,
-    private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val  contractAllowedUserRepository: ContactAllowedUserRepository
 ):UserService{
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
@@ -111,9 +112,9 @@ class UserServiceImpl(
     }
 
     override fun givePermission(userId: Long, contractId: Long) {
-        val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
-        if(userRepository.existsById(userId))contract.allowedOperators.add(userId)
-         else throw UserNotFoundException()
+        val contract = contractRepository.findByIdAndDeletedFalse(contractId)?: throw ContractNotFoundException()
+        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
+            contractAllowedUserRepository.save(ContractAllowedUser(user,contract))
     }
 }
 
@@ -122,7 +123,8 @@ class UserServiceImpl(
 @Service
 class DocFileService(
     private val templateRepository: TemplateRepository,
-    private val contractRepository: ContractRepository
+    private val contractRepository: ContractRepository,
+    private val userRepository: UserRepository
 ) {
     fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -233,25 +235,27 @@ class DocFileService(
         throw RuntimeException("something went wrong")
     }
 
-    fun addContract(addContractDTO: AddContractDTO) {
-        addContractDTO.run {
-            templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-                template.let {
-                    var fileName = it.filePath.substringAfterLast("/")
-                    val contractFilePathDocx = "./files/contracts/${fileName}"
-                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+    fun addContract(addContractDTOs: List<AddContractDTO>) {
+        for (addContractDTO in addContractDTOs) {
+            addContractDTO.run {
+                templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
+                    template.let {
+                        var fileName = it.filePath.substringAfterLast("/")
+                        val contractFilePathDocx = "./files/contracts/${fileName}"
+                        Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    changeAllKeysToValues(templateId, contractFilePathDocx, fields)
+                        changeAllKeysToValues(templateId, contractFilePathDocx, fields)
 
-                    fileName = fileName.substringBeforeLast(".")
-                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    convertWordToPdf(
-                        Files.newInputStream(Paths.get(contractFilePathDocx)),
-                        Files.newOutputStream(Paths.get(contractFilePathPdf))
-                    )
+                        fileName = fileName.substringBeforeLast(".")
+                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+                        convertWordToPdf(
+                            Files.newInputStream(Paths.get(contractFilePathDocx)),
+                            Files.newOutputStream(Paths.get(contractFilePathPdf))
+                        )
 //                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                        contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                    }
                 }
             }
         }
@@ -278,17 +282,20 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.getContractsById(id)?.let {
+        val optional = userRepository.findById(id)
+        if(optional.isEmpty) throw UserNotFoundException()
+        contractRepository.findAllByCreatedBy(optional.get()).let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
         }
         return contracts
+//hhhhh
     }
 
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.findAllNotDeleted()?.let {
+        contractRepository.findAllNotDeleted().let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
