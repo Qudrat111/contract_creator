@@ -21,6 +21,8 @@ import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
 
 
 interface AuthService : UserDetailsService {
@@ -259,7 +261,8 @@ class DocFileService(
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
-        //TODO files should be compressed and returned
+        val filesToZip = mutableListOf<String>()
+
         for (contractId in downloadContractDTO.contractIds) {
             downloadContractDTO.let {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
@@ -271,21 +274,34 @@ class DocFileService(
                             else -> throw RuntimeException("invalid file type")
                         }
                         filePathStr = "$filePathStr.$fileType"
-
-                        val filePath = Paths.get(filePathStr)
-                        val resource = UrlResource(filePath.toUri())
-
-                        if (resource.exists() && resource.isReadable) {
-                            return ResponseEntity.ok().header(
-                                HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"contract_${contractId}.docx\""
-                            ).body(resource)
-                        }
+                        filesToZip.add(filePathStr)
                     }
                 }
             }
             throw RuntimeException("something went wrong")
         }
+        val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
+
+        ZipOutputStream(FileOutputStream(zipFileName)).use { zipOut ->
+            filesToZip.forEach { fileName ->
+                val fileToZip = File(fileName)
+                zipOut.putNextEntry(ZipEntry(fileToZip.name))
+                fileToZip.inputStream().use { input ->
+                    input.copyTo(zipOut)
+                }
+                zipOut.closeEntry()
+            }
+        }
+        val filePath = Paths.get(zipFileName)
+        val resource = UrlResource(filePath.toUri())
+
+        if (resource.exists() && resource.isReadable) {
+            return ResponseEntity.ok().header(
+                HttpHeaders.CONTENT_DISPOSITION,
+                "attachment; filename=\"contracts.zip\""
+            ).body(resource)
+        }
+
         return ResponseEntity.ok().build()
     }
 
