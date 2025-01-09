@@ -35,7 +35,12 @@ class FieldController(
 
     @PutMapping("{id}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
-    fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) = service.updateField(id, fieldUpdateDTO)
+    fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) =
+        service.updateField(id, fieldUpdateDTO)
+
+    @DeleteMapping("{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    fun delete(@PathVariable id: Long) = service.deleteField(id)
 
 }
 
@@ -81,13 +86,28 @@ class TemplateController(private val docFileService: DocFileService) {
 class ContractController(
     private val docFileService: DocFileService,
 ) {
+    @GetMapping("get-by-clint/{clientPassport}")
+    fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
     fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
 
     @PostMapping("/download")
     fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
+
+    @GetMapping("/{id}")
+    fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
+
+    @GetMapping("/get")
+    fun getContractsById() = docFileService.getAllOperatorContracts(getUserId()!!)
+
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    fun getAll() = docFileService.getAllContracts()
 }
+
 
 @RestController
 @RequestMapping("/user")
@@ -109,7 +129,8 @@ class UserController(
     fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
 
     @PutMapping("give-permission")
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
     fun givePermission(@RequestParam userId: Long,
                        @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
 }
