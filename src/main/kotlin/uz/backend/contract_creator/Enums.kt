@@ -18,5 +18,6 @@ enum class ErrorCodes(val code: Int) {
     BAD_CREDENTIALS(101),
     FIELD_NOT_FOUND(102),
     EXISTS_FIELD(103),
-    FILE_NOT_FOUND(300)
+    FILE_NOT_FOUND(300),
+    CONTRACT_NOT_FOUND(104)
 }

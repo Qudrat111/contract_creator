@@ -3,6 +3,7 @@ package uz.backend.contract_creator
 import jakarta.validation.Valid
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.multipart.MultipartFile
@@ -23,6 +24,7 @@ class FieldController(
     private val service: FieldService,
 ) {
     @PostMapping()
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun create(@RequestBody @Valid fieldDTO: FieldDTO) = service.createField(fieldDTO)
 
     @GetMapping("{id}")
@@ -32,10 +34,12 @@ class FieldController(
     fun getAll() = service.getAllField()
 
     @PutMapping("{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun update(@PathVariable id: Long, @RequestBody fieldUpdateDTO: FieldUpdateDTO) =
         service.updateField(id, fieldUpdateDTO)
 
     @DeleteMapping("{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun delete(@PathVariable id: Long) = service.deleteField(id)
 
 }
@@ -59,6 +63,7 @@ class AuthController(
 class TemplateController(private val docFileService: DocFileService) {
 
     @PostMapping("add-template")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
         docFileService.createNewTemplate(file, name)
 
@@ -68,7 +73,8 @@ class TemplateController(private val docFileService: DocFileService) {
     @GetMapping("/show/{id}")
     fun show(@PathVariable("id") id: Long) = docFileService.getOneTemplate(id)
 
-    @DeleteMapping("/id")
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun delete(@PathVariable("id") id: Long) = docFileService.deleteTemplate(id)
 
     @GetMapping("/all")
@@ -87,7 +93,7 @@ class ContractController(
     fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
 
     @PostMapping("/download")
-    fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
+    fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
 
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
@@ -97,5 +103,34 @@ class ContractController(
 
 
     @GetMapping
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
     fun getAll() = docFileService.getAllContracts()
+}
+
+
+@RestController
+@RequestMapping("/user")
+class UserController(
+    private val userService: UserService
+) {
+    @PutMapping("change-role/{userId}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
+
+    @GetMapping
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    fun getAll()=userService.getAllUsers()
+
+    @GetMapping("{userId}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
+
+    @PutMapping("give-permission")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    fun givePermission(@RequestParam userId: Long,
+                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
 }

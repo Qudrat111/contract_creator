@@ -43,12 +43,10 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
     implementation("io.jsonwebtoken:jjwt-impl:0.12.5")
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
-
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.google.zxing:javase:3.5.2")
-
     implementation("org.apache.poi:poi-ooxml:5.2.3")
-
+    implementation("com.aspose:aspose-words:24.12")
 }
 
 kotlin {
