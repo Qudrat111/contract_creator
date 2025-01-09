@@ -47,7 +47,8 @@ class AuthServiceImpl(
     private val jwtProvider: JwtProvider
 ) : AuthService {
     override fun logIn(signInDTO: LogInDTO): String {
-        val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
+        val authentication =
+            UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
 
@@ -80,15 +81,17 @@ class AuthServiceImpl(
 interface UserService {
     fun changeRole(userId: Long, role: RoleEnum): UserDTO
     fun getAllUsers(): List<UserDTO>
-    fun getOneUser(userId: Long): UserDTO
-    fun givePermission(userId: Long, contractId: Long)
+    fun getOneUser(userId: Long) : UserDTO
+    fun givePermission(userId: Long, contractId:Long)
+
 }
 
 @Service
 class UserServiceImpl(
     private val userRepository: UserRepository,
-    private val contractRepository: ContractRepository
-) : UserService {
+    private val contractRepository: ContractRepository,
+    private val  contractAllowedUserRepository: ContactAllowedUserRepository
+):UserService{
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -97,27 +100,30 @@ class UserServiceImpl(
     }
 
     override fun getAllUsers(): List<UserDTO> {
-        return userRepository.findAllNotDeleted().map {
-            UserDTO.toResponse(it)
-        }
+       return userRepository.findAllNotDeleted().map {
+           UserDTO.toResponse(it)
+       }
     }
 
     override fun getOneUser(userId: Long): UserDTO {
-        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
+        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
         return UserDTO.toResponse(user)
     }
 
     override fun givePermission(userId: Long, contractId: Long) {
-        val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
-        if (userRepository.existsById(userId)) contract.allowedOperators= (userId)
-        else throw UserNotFoundException()
+        val contract = contractRepository.findByIdAndDeletedFalse(contractId)?: throw ContractNotFoundException()
+        val user = userRepository.findByIdAndDeletedFalse(userId)?: throw UserNotFoundException()
+            contractAllowedUserRepository.save(ContractAllowedUser(user,contract))
     }
 }
+
 
 
 @Service
 class DocFileService(
     private val templateRepository: TemplateRepository,
+    private val contractRepository: ContractRepository,
+    private val userRepository: UserRepository
     private val contractRepository: ContractRepository,
     private val fieldRepository: FieldRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository
@@ -198,7 +204,8 @@ class DocFileService(
     fun getKeysByTemplateId(templateId: Long): List<String> {
         val keys = mutableListOf<String>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-            for (field in template.fields) keys.add(field.name)
+            for (field in template.fields)
+                keys.add(field.name)
         }
         return keys
     }
@@ -260,22 +267,24 @@ class DocFileService(
         downloadContractDTO.let {
             contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
                 contract.run {
-//                    var filePathStr = contractFilePath.substringBeforeLast(".")
-//                    val fileType = when (it.fileType.lowercase()) {
-//                        "pdf" -> "pdf"
-//                        "docx" -> "docx"
-//                        else -> throw RuntimeException("invalid file type")
-//                    }
-//                    filePathStr = "$filePathStr.$fileType"
+                    var filePathStr = contractFilePath.substringBeforeLast(".")
+                    val fileType = when (it.fileType.lowercase()) {
+                        "pdf" -> "pdf"
+                        "docx" -> "docx"
+                        else -> throw RuntimeException("invalid file type")
+                    }
+                    filePathStr = "$filePathStr.$fileType"
 
-                    val filePath = Paths.get(contractFilePath)
+                    val filePath = Paths.get(filePathStr)
                     val resource = UrlResource(filePath.toUri())
 
                     if (resource.exists() && resource.isReadable) {
-                        return ResponseEntity.ok().header(
-                            HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"contract_${it.contractId}.docx\""
-                        ).body(resource)
+                        return ResponseEntity.ok()
+                            .header(
+                                HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"contract_${it.contractId}.${fileType}\""
+                            )
+                            .body(resource)
                     }
                 }
             }
@@ -340,17 +349,20 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.getContractsById(id)?.let {
+        val optional = userRepository.findById(id)
+        if(optional.isEmpty) throw UserNotFoundException()
+        contractRepository.findAllByCreatedBy(optional.get()).let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
         }
         return contracts
+
     }
 
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.findAllNotDeleted()?.let {
+        contractRepository.findAllNotDeleted().let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }

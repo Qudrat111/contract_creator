@@ -85,7 +85,8 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-     val secretKey: String? = null
+    val secretKey: String? = null
+
     @Value("\${jwt.expireDate}")
     val expireDate: Int? = null
 
@@ -106,8 +107,8 @@ class JwtProvider {
             .verifyWith(key)
             .build()
             .parse(token)
-            .getPayload() as Claims
-        return payload.getSubject()
+            .payload as Claims
+        return payload.subject
     }
 
     private val key: SecretKey
@@ -164,4 +165,6 @@ class SecurityConfig(
         provider.setUserDetailsService(authService)
         return provider
     }
+
+    //333
 }

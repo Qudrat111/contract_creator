@@ -53,7 +53,7 @@ class User(
 class Template(
     @Column(nullable = false) val name: String,
     @Column(nullable = false) val filePath: String,
-    @ManyToMany var fields: MutableList<Field>,
+    @ManyToMany val fields: List<Field>,
 ) : BaseEntity()
 
 @Entity
@@ -67,12 +67,21 @@ class Contract(
     @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
-    var allowedOperators: Long = 1,
+    @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
     ) : BaseEntity()
 
 @Entity
 class ContractFieldValue(
+
     @ManyToOne val contract: Contract,
     @ManyToOne val field: Field,
     @Column(nullable = false) val value: String,
     ) : BaseEntity()
+
+@Entity
+class ContractAllowedUser(
+
+    @ManyToOne @JoinColumn(nullable = false) val operator: User,
+    @ManyToOne @JoinColumn(nullable = false) val contract: Contract
+
+): BaseEntity()

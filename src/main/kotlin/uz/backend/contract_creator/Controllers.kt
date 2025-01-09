@@ -44,7 +44,7 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 class FieldController(
     private val service: FieldService,
 ) {
-    @PostMapping()
+    @PostMapping
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun create(@RequestBody @Valid fieldDTO: FieldDTO) = service.createField(fieldDTO)
 
@@ -111,7 +111,7 @@ class ContractController(
     fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
-    fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
+    fun addContract(@RequestBody contractDTOs: List<AddContractDTO>) = docFileService.addContract(contractDTOs)
 
     @PostMapping("/download")
     fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
