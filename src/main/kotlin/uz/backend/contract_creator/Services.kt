@@ -116,7 +116,7 @@ class UserServiceImpl(
 
 @Service
 class DocFileService(
-    private val templateRepository: TemplateRepository, private val contractRepository: ContractRepository
+    private val templateRepository: TemplateRepository,
     private val contractRepository: ContractRepository,
     private val fieldRepository: FieldRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository
@@ -281,7 +281,7 @@ class DocFileService(
         throw RuntimeException("something went wrong")
     }
 
-    fun addContract(createContractDTO: CreateContractDTO): Contract {
+    fun addContract(createContractDTO: AddContractDTO): Contract {
         createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                 template.let { it ->
