@@ -259,66 +259,73 @@ class DocFileService(
     }
 
     fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
-        downloadContractDTO.let {
-            contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
-                contract.run {
-                    var filePathStr = contractFilePath.substringBeforeLast(".")
-                    val fileType = when (it.fileType.lowercase()) {
-                        "pdf" -> "pdf"
-                        "docx" -> "docx"
-                        else -> throw RuntimeException("invalid file type")
-                    }
-                    filePathStr = "$filePathStr.$fileType"
+        //TODO files should be compressed and returned
+        for (contractId in downloadContractDTO.contractIds) {
+            downloadContractDTO.let {
+                contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
+                    contract.run {
+                        var filePathStr = contractFilePath.substringBeforeLast(".")
+                        val fileType = when (it.fileType.lowercase()) {
+                            "pdf" -> "pdf"
+                            "docx" -> "docx"
+                            else -> throw RuntimeException("invalid file type")
+                        }
+                        filePathStr = "$filePathStr.$fileType"
 
-                    val filePath = Paths.get(filePathStr)
-                    val resource = UrlResource(filePath.toUri())
+                        val filePath = Paths.get(filePathStr)
+                        val resource = UrlResource(filePath.toUri())
 
-                    if (resource.exists() && resource.isReadable) {
-                        return ResponseEntity.ok().header(
-                            HttpHeaders.CONTENT_DISPOSITION,
-                            "attachment; filename=\"contract_${it.contractId}.docx\""
-                        ).body(resource)
+                        if (resource.exists() && resource.isReadable) {
+                            return ResponseEntity.ok().header(
+                                HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"contract_${contractId}.docx\""
+                            ).body(resource)
+                        }
                     }
                 }
             }
+            throw RuntimeException("something went wrong")
         }
-        throw RuntimeException("something went wrong")
+        return ResponseEntity.ok().build()
     }
 
     @Transactional
-    fun addContract(createContractDTO: AddContractDTO): Contract {
-        createContractDTO.run {
-            templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-                template.let { it ->
-                    var fileName = it.filePath.substringAfterLast("/")
-                    val fileType = fileName.substringAfterLast(".")
-                    fileName = fileName.substringBeforeLast(".")
-                    fileName = fileName.substring(0, fileName.length - 36)
-                    fileName = fileName + UUID.randomUUID() + "." + fileType
-                    val contractFilePathDocx = "./files/contracts/${fileName}"
-                    Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+    fun addContract(createContractDTOs: List<AddContractDTO>): List<Long> {
+        val contractIds: MutableList<Long> = mutableListOf()
+        for (createContractDTO in createContractDTOs) {
+            createContractDTO.run {
+                templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
+                    template.let { it ->
+                        var fileName = it.filePath.substringAfterLast("/")
+                        val fileType = fileName.substringAfterLast(".")
+                        fileName = fileName.substringBeforeLast(".")
+                        fileName = fileName.substring(0, fileName.length - 36)
+                        fileName = fileName + UUID.randomUUID() + "." + fileType
+                        val contractFilePathDocx = "./files/contracts/${fileName}"
+                        Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
-                    changeAllKeysToValues(templateId, contractFilePathDocx, fields)
-                    val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                        changeAllKeysToValues(templateId, contractFilePathDocx, fields)
+                        val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
 
-                    val contractFieldValueMap = fields.map { fieldEntry ->
-                        val fieldOpt = fieldRepository.findByName(fieldEntry.key)
-                        fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+                        val contractFieldValueMap = fields.map { fieldEntry ->
+                            val fieldOpt = fieldRepository.findByName(fieldEntry.key)
+                            fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
+                        }
+                        contractFieldValueRepository.saveAll(contractFieldValueMap)
+
+                        fileName = fileName.substringBeforeLast(".")
+                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+                        convertWordToPdf(
+                            Files.newInputStream(Paths.get(contractFilePathDocx)),
+                            Files.newOutputStream(Paths.get(contractFilePathPdf))
+                        )
+
+                        contractIds.add(contract.id!!)
                     }
-                    contractFieldValueRepository.saveAll(contractFieldValueMap)
-
-                    fileName = fileName.substringBeforeLast(".")
-                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    convertWordToPdf(
-                        Files.newInputStream(Paths.get(contractFilePathDocx)),
-                        Files.newOutputStream(Paths.get(contractFilePathPdf))
-                    )
-
-                    return contract
-                }
+                } ?: throw TemplateNotFoundException()
             }
         }
-        throw RuntimeException("template not found")
+        return contractIds
     }
 
     fun getContract(id: Long): ResponseEntity<Resource>? {

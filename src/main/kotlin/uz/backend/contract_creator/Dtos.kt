@@ -75,7 +75,7 @@ data class FieldUpdateDTO(
 )
 
 data class DownloadContractDTO (
-    @NotNull val contractId: Long,
+    @NotNull val contractIds: List<Long>,
     @NotNull val fileType: String
 )
 
