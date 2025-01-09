@@ -24,6 +24,10 @@ repositories {
 
 dependencies {
     implementation("org.docx4j:docx4j-core:11.5.1")
+    implementation("org.docx4j:docx4j-export-fo:11.5.1")
+    implementation("org.apache.xmlgraphics:fop:2.10")
+
+    implementation("xerces:xercesImpl:2.12.2")
 
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")

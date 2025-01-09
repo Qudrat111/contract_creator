@@ -87,8 +87,8 @@ class TemplateController(private val docFileService: DocFileService) {
     @DeleteMapping("/id")
     fun delete(@PathVariable("id") id: Long) = docFileService.deleteTemplate(id)
 
-    @GetMapping("/all")
-    fun getAll() = docFileService.getAllTemplates()
+//    @GetMapping("/all")
+//    fun getAll() = docFileService.getAllTemplates()
 }
 
 @RestController
@@ -98,8 +98,8 @@ class ContractController(
 ) {
 
     @GetMapping("/add")
-    fun addContract(@RequestBody contractDto: AddContractDTO) = docFileService.addContract(contractDto)
+    fun addContract(@RequestBody contractDto: CreateContractDTO) = docFileService.addContract(contractDto)
 
     @PostMapping("/download")
-    fun downloadContract(@RequestBody downlaodDto: DownloadContractDTO) = docFileService.downloadContract(downlaodDto)
+    fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
 }
