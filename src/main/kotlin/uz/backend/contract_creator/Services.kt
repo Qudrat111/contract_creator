@@ -260,15 +260,15 @@ class DocFileService(
         downloadContractDTO.let {
             contractRepository.findByIdAndDeletedFalse(it.contractId)?.let { contract ->
                 contract.run {
-                    var filePathStr = contractFilePath.substringBeforeLast(".")
-                    val fileType = when (it.fileType.lowercase()) {
-                        "pdf" -> "pdf"
-                        "docx" -> "docx"
-                        else -> throw RuntimeException("invalid file type")
-                    }
-                    filePathStr = "$filePathStr.$fileType"
+//                    var filePathStr = contractFilePath.substringBeforeLast(".")
+//                    val fileType = when (it.fileType.lowercase()) {
+//                        "pdf" -> "pdf"
+//                        "docx" -> "docx"
+//                        else -> throw RuntimeException("invalid file type")
+//                    }
+//                    filePathStr = "$filePathStr.$fileType"
 
-                    val filePath = Paths.get(filePathStr)
+                    val filePath = Paths.get(contractFilePath)
                     val resource = UrlResource(filePath.toUri())
 
                     if (resource.exists() && resource.isReadable) {
