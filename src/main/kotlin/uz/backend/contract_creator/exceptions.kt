@@ -40,7 +40,10 @@ class ExistsFieldException() : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.EXISTS_FIELD
 }
 
-class ContractNotFoundException():BaseExceptionHandler(){
-    override fun errorCode() = ErrorCodes.CONTRACT_NOT_FOUND
+class FileNotFoundException() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.FILE_NOT_FOUND
+}
 
+class ContractNotFoundException() : BaseExceptionHandler() {
+    override fun errorCode() = ErrorCodes.CONTRACT_NOT_FOUND
 }

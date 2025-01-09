@@ -8,6 +8,7 @@ import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -16,13 +17,12 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.io.InputStream
-import java.io.OutputStream
+import java.io.*
+import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
+
 
 interface AuthService : UserDetailsService {
 
@@ -33,8 +33,8 @@ interface AuthService : UserDetailsService {
 
 interface FieldService {
     fun createField(dto: FieldDTO)
-    fun getFieldById(id: Long): FieldDTO
-    fun getAllField(): List<FieldDTO>
+    fun getFieldById(id: Long): FieldGetDto
+    fun getAllField(): List<FieldGetDto>
     fun updateField(id: Long, updateDto: FieldUpdateDTO)
     fun deleteField(id: Long)
 
@@ -170,24 +170,34 @@ class DocFileService(
         templateRepository.trash(id)
     }
 
-    fun getOneTemplate(id: Long): XWPFDocument? {
+    fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
-            val file = FileInputStream(it.filePath)
-            val document = XWPFDocument(file)
-            return document
+            val filePath = Paths.get("attaches/${it.filePath}").normalize()
+            var resource: Resource? = null
+            resource = UrlResource(filePath.toUri())
+            if (!resource.exists()) {
+                throw FileNotFoundException("File not found: ${it.filePath}")
+            }
+            var contentType = Files.probeContentType(filePath)
+            if (contentType == null) {
+                contentType = "application/octet-stream" // Fallback content type
+            }
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body<Resource>(resource)
+
         }
     }
 
-//    fun getAllTemplates(): List<TemplateDto> {
-//        val listTemplates = mutableListOf<TemplateDto>()
-//        templateRepository.findAllNotDeleted().let {
-//            it.forEach { template ->
-//                listTemplates.add(TemplateDto())
-//            }
-//        }
-//        return listTemplates
-//    }
-
+    fun getAllTemplates(): List<TemplateDto> {
+        val listTemplates = mutableListOf<TemplateDto>()
+        templateRepository.findAllNotDeleted().let {
+            it.forEach { template ->
+                listTemplates.add(TemplateDto.toResponse(template))
+            }
+        }
+        return listTemplates
+    }
 
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
@@ -245,6 +255,45 @@ class DocFileService(
                 }
             }
         }
+    }
+
+    fun getContract(id: Long): ResponseEntity<Resource>? {
+        return contractRepository.findByIdAndDeletedFalse(id)?.let {
+            val filePath = Paths.get("attaches/${it.contractFilePath}").normalize()
+            var resource: Resource? = null
+            resource = UrlResource(filePath.toUri())
+            if (!resource.exists()) {
+                throw FileNotFoundException("File not found: ${it.contractFilePath}")
+            }
+            var contentType = Files.probeContentType(filePath)
+            if (contentType == null) {
+                contentType = "application/octet-stream" // Fallback content type
+            }
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .body<Resource>(resource)
+
+        }
+    }
+
+    fun getAllOperatorContracts(id: Long): List<ContractDto> {
+        val contracts = mutableListOf<ContractDto>()
+        contractRepository.getContractsById(id)?.let {
+            it.forEach {
+                contracts.add(ContractDto.toDTO(it))
+            }
+        }
+        return contracts
+    }
+
+    fun getAllContracts(): List<ContractDto>? {
+        val contracts = mutableListOf<ContractDto>()
+        contractRepository.findAllNotDeleted().let {
+            it.forEach {
+                contracts.add(ContractDto.toDTO(it))
+            }
+        }
+        return contracts
     }
 
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
@@ -314,6 +363,10 @@ class DocFileService(
         }
         return keys
     }
+
+    fun getContractsByClint(clientPassport: String): List<ContractDto> {
+        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
+    }
 }
 
 @Service
@@ -327,12 +380,13 @@ class FieldServiceImpl(
         }
     }
 
-    override fun getFieldById(id: Long): FieldDTO {
-        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldDTO.toDTO(it) } ?: throw FieldNotFoundException()
+    override fun getFieldById(id: Long): FieldGetDto {
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) }
+            ?: throw FieldNotFoundException()
     }
 
-    override fun getAllField(): List<FieldDTO> {
-        return fieldRepository.findAllNotDeleted().map { FieldDTO.toDTO(it) }
+    override fun getAllField(): List<FieldGetDto> {
+        return fieldRepository.findAllNotDeleted().map { FieldGetDto.toDTO(it) }
     }
 
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
@@ -344,7 +398,7 @@ class FieldServiceImpl(
             }
             type?.let { field.type = TypeEnum.valueOf(it.uppercase()) }
         }
-        fieldRepository.saveAndRefresh(field)
+        fieldRepository.save(field)
     }
 
     override fun deleteField(id: Long) {

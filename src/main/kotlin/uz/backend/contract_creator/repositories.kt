@@ -7,11 +7,13 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @NoRepositoryBean
@@ -65,6 +67,18 @@ interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
 }
 
-interface ContractRepository : BaseRepository<Contract>
+interface ContractRepository : BaseRepository<Contract> {
+    fun findByClientPassportAndDeletedFalse(clientPassport: String): MutableList<Contract>
+
+    @Query(
+        """
+        select c from contracts c
+        where c.createdBy =: id
+    """
+    )
+    fun getContractsById(@Param("id") id: Long): List<Contract>?
+
+}
+
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue>
 

@@ -58,13 +58,12 @@ class Template(
 
 @Entity
 class Field(
-    @Column(nullable = false) var name: String,
+    @Column(nullable = false, unique = true) var name: String,
     @Enumerated(EnumType.STRING) var type: TypeEnum
 ) : BaseEntity()
 
-@Entity
+@Entity(name = "contracts")
 class Contract(
-
     @ManyToOne val template: Template? = null,
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
