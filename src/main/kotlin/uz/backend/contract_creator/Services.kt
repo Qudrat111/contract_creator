@@ -47,8 +47,7 @@ class AuthServiceImpl(
     private val jwtProvider: JwtProvider
 ) : AuthService {
     override fun logIn(signInDTO: LogInDTO): String {
-        val authentication =
-            UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
+        val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
 
@@ -83,14 +82,12 @@ interface UserService {
     fun getAllUsers(): List<UserDTO>
     fun getOneUser(userId: Long): UserDTO
     fun givePermission(userId: Long, contractId: Long)
-
 }
 
 @Service
 class UserServiceImpl(
     private val userRepository: UserRepository,
-    private val contractRepository: ContractRepository,
-    private val contractAllowedUserRepository: ContactAllowedUserRepository
+    private val contractRepository: ContractRepository
 ) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
@@ -112,8 +109,8 @@ class UserServiceImpl(
 
     override fun givePermission(userId: Long, contractId: Long) {
         val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
-        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
-        contractAllowedUserRepository.save(ContractAllowedUser(user, contract))
+        if (userRepository.existsById(userId)) contract.allowedOperators= (userId)
+        else throw UserNotFoundException()
     }
 }
 
@@ -122,7 +119,6 @@ class UserServiceImpl(
 class DocFileService(
     private val templateRepository: TemplateRepository,
     private val contractRepository: ContractRepository,
-    private val userRepository: UserRepository,
     private val fieldRepository: FieldRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository
 ) {
@@ -202,8 +198,7 @@ class DocFileService(
     fun getKeysByTemplateId(templateId: Long): List<String> {
         val keys = mutableListOf<String>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-            for (field in template.fields)
-                keys.add(field.name)
+            for (field in template.fields) keys.add(field.name)
         }
         return keys
     }
@@ -277,12 +272,10 @@ class DocFileService(
                     val resource = UrlResource(filePath.toUri())
 
                     if (resource.exists() && resource.isReadable) {
-                        return ResponseEntity.ok()
-                            .header(
-                                HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"contract_${it.contractId}.${fileType}\""
-                            )
-                            .body(resource)
+                        return ResponseEntity.ok().header(
+                            HttpHeaders.CONTENT_DISPOSITION,
+                            "attachment; filename=\"contract_${it.contractId}.docx\""
+                        ).body(resource)
                     }
                 }
             }
@@ -347,20 +340,17 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        val optional = userRepository.findById(id)
-        if (optional.isEmpty) throw UserNotFoundException()
-        contractRepository.findAllByCreatedBy(optional.get()).let {
+        contractRepository.getContractsById(id)?.let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
         }
         return contracts
-
     }
 
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
-        contractRepository.findAllNotDeleted().let {
+        contractRepository.findAllNotDeleted()?.let {
             it.forEach {
                 contracts.add(ContractDto.toDTO(it))
             }
@@ -452,22 +442,22 @@ class FieldServiceImpl(
 
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
         val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
-        val template =
-            templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()
+        val template = templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()
         val fields = template.fields
 
         if (!fields.contains(field)) {
             throw FieldNotBelongToTemplate()
         }
 
-        val newField: Field
+
+        val newField :Field;
         updateDto.run {
             if (fieldRepository.existsByName(name!!)) throw ExistsFieldException()
             newField = Field(name, TypeEnum.valueOf(type!!.uppercase()))
         }
         val saveField = fieldRepository.save(newField)
         val index = fields.indexOf(field)
-        fields[index] = saveField
+        fields[index]=saveField
         templateRepository.save(template)
 
     }
