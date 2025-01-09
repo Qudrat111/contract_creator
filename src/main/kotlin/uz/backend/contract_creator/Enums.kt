@@ -20,7 +20,4 @@ enum class ErrorCodes(val code: Int){
     EXISTS_FIELD(103),
     FILE_NOT_FOUND(300),
     CONTRACT_NOT_FOUND(104)
-
-    //333
-
 }
