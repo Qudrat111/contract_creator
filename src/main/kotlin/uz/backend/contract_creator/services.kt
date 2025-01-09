@@ -278,7 +278,11 @@ class DocFileService(
         createContractDTO.run {
             templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                 template.let { it ->
-                    val fileName = it.filePath.substringAfterLast("/")
+                    var fileName = it.filePath.substringAfterLast("/")
+                    val fileType = fileName.substringAfterLast(".")
+                    fileName = fileName.substringBeforeLast(".")
+                    fileName = fileName.substring(0, fileName.length - 36)
+                    fileName = fileName + UUID.randomUUID() + "." + fileType
                     val contractFilePathDocx = "./files/contracts/${fileName}"
                     Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 

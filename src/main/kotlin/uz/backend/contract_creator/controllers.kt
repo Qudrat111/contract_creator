@@ -16,9 +16,10 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
     @ExceptionHandler(BaseExceptionHandler::class)
     @ResponseStatus(value = HttpStatus.NOT_FOUND)
     @ResponseBody
-    fun handleAccountException(exception: BaseExceptionHandler): BaseMessage {
-        return exception.getErrorMessage(errorMessageSource)
+    fun handleAccountException(ex: BaseExceptionHandler): BaseMessage {
+        return ex.getErrorMessage(errorMessageSource)
     }
+
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
