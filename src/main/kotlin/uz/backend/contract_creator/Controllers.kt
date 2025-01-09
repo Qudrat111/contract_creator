@@ -5,8 +5,8 @@ import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
-import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.multipart.MultipartFile
@@ -24,8 +24,12 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
         val errors = exception.bindingResult.fieldErrors.joinToString("\n") {
-            "(${it.field}) ${it.defaultMessage} (${errorMessageSource.getMessage("REJECTED_VALUE", arrayOf(),
-                LocaleContextHolder.getLocale())}: ${it.rejectedValue})"
+            "(${it.field}) ${it.defaultMessage} (${
+                errorMessageSource.getMessage(
+                    "REJECTED_VALUE", arrayOf(),
+                    LocaleContextHolder.getLocale()
+                )
+            }: ${it.rejectedValue})"
         }
         return ResponseEntity.badRequest().body(BaseMessage(400, errors))
     }
@@ -111,7 +115,7 @@ class ContractController(
     fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
-    fun addContract(@RequestBody contractDTOs: List<AddContractDTO>) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: AddContractDTO) = docFileService.addContract(contractDTOs)
 
     @PostMapping("/download")
     fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
@@ -124,8 +128,10 @@ class ContractController(
 
 
     @GetMapping
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
-            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
+    )
     fun getAll() = docFileService.getAllContracts()
 }
 
@@ -140,18 +146,26 @@ class UserController(
     fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
 
     @GetMapping
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
-            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
-    fun getAll()=userService.getAllUsers()
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
+    )
+    fun getAll() = userService.getAllUsers()
 
     @GetMapping("{userId}")
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
-            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
+    )
     fun getOneUser(@PathVariable userId: Long) = userService.getOneUser(userId)
 
     @PutMapping("give-permission")
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
-            "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())")
-    fun givePermission(@RequestParam userId: Long,
-                       @RequestParam contractId: Long) = userService.givePermission(userId,contractId)
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
+    )
+    fun givePermission(
+        @RequestParam userId: Long,
+        @RequestParam contractId: Long
+    ) = userService.givePermission(userId, contractId)
 }

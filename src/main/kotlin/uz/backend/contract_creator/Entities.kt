@@ -53,7 +53,7 @@ class User(
 class Template(
     @Column(nullable = false) val name: String,
     @Column(nullable = false) val filePath: String,
-    @ManyToMany val fields: List<Field>,
+    @ManyToMany val fields: MutableList<Field>,
 ) : BaseEntity()
 
 @Entity
