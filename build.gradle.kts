@@ -23,6 +23,7 @@ repositories {
 }
 
 dependencies {
+    implementation("org.docx4j:docx4j-core:11.5.1")
     implementation("org.docx4j:docx4j-JAXB-Internal:8.3.8")
     implementation("org.docx4j:docx4j-export-fo:11.4.9")
     implementation("org.docx4j:docx4j-JAXB-MOXy:11.4.9")
