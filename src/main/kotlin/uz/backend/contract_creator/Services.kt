@@ -410,49 +410,26 @@ class DocFileService(
 
     private fun convertWordToPdf(inputFile: String, outputFileDir: String) {
         val processBuilder = ProcessBuilder(
-            "C:\\Program Files\\LibreOffice\\program\\soffice.exe", // Full path to soffice.exe
+            "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
             "--headless",
             "--convert-to", "pdf",
             "--outdir", outputFileDir,
-            inputFile // Input file
+            inputFile
         )
         val process = processBuilder.start()
         val exitCode = process.waitFor()
 
-        if (exitCode == 0) {
-            println("Conversion successful: $outputFileDir/${File(inputFile).nameWithoutExtension}.pdf")
-        } else {
+        if (exitCode != 0) {
             val errorMessage = process.errorStream.bufferedReader().readText()
             println("Error during conversion: $errorMessage")
         }
     }
 
-
-    private fun getKey(run: XWPFRun): String? {
-        return getKey(run.text())
-    }
-
-    private fun getKey(text: String): String? {
-        val firstIndex = text.indexOf("##") + 2
-        if (firstIndex > 1) {
-            val lastIndex = text.indexOf("##", firstIndex)
-            if (lastIndex > -1) {
-                return text.substring(firstIndex, lastIndex)
-            }
-        }
-        return null
-    }
-
-    private fun getKey(run: XWPFTableCell): String? {
-        return getKey(run.text)
-    }
-
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
         val keys = mutableListOf<String>()
-        for (table in document.tables) {
+        for (table in document.tables)
             keys.addAll(getKeys(table))
-        }
         keys.addAll(getKeys(document.paragraphs))
         return keys
     }
@@ -460,22 +437,31 @@ class DocFileService(
     private fun getKeys(table: XWPFTable): MutableList<String> {
         val keys = mutableListOf<String>()
         for (row in table.rows)
-            for (tableCell in row.tableCells) {
-                getKey(tableCell)?.let { keys.add(it) }
-            }
+            for (tableCell in row.tableCells)
+                keys.addAll(getKeys(tableCell.paragraphs))
         return keys
     }
 
     private fun getKeys(paragraphs: List<XWPFParagraph>): MutableList<String> {
         val keys = mutableListOf<String>()
-        for (paragraph in paragraphs) keys.addAll(getKeys(paragraph))
+        for (paragraph in paragraphs)
+            keys.addAll(getKeys(paragraph))
         return keys
     }
 
     private fun getKeys(paragraph: XWPFParagraph): MutableList<String> {
-        val keys = mutableListOf<String>()
-        for (run in paragraph.runs) {
-            getKey(run)?.let { keys.add(it) }
+        val keys: MutableList<String> = mutableListOf()
+        paragraph.run {
+            while (true) {
+                val firstIndex = text.indexOf("##")
+                if (firstIndex == -1) break
+
+                val lastIndex = text.indexOf("##", firstIndex + 2)
+                if (lastIndex == -1) break
+
+                keys.add(text.substring(firstIndex, lastIndex))
+                break
+            }
         }
         return keys
     }
