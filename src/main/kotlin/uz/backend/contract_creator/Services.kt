@@ -460,8 +460,8 @@ class DocFileService(
                 val lastIndex = newText.indexOf("##", firstIndex + 2)
                 if (lastIndex == -1) break
 
-                val key = text.substring(firstIndex+2, lastIndex)
-                newText = text.substring(firstIndex)+key+text.substring(lastIndex)
+                val key = newText.substring(firstIndex+2, lastIndex)
+                newText = newText.substring(lastIndex+2)
                 keys.add(key)
             }
         }
