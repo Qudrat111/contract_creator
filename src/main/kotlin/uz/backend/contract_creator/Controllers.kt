@@ -138,12 +138,6 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll() = docFileService.getAllContracts()
-
-
-    @GetMapping("asd")
-    fun aaaaaa() {
-        throw TemplateNotFoundException()
-    }
 }
 
 

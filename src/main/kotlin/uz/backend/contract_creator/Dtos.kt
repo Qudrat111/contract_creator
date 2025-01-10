@@ -82,6 +82,7 @@ data class AddContractDTO(
 )
 
 data class TemplateDto(
+    val id: Long ?,
     @NotNull val name: String,
     @NotNull val keys: List<FieldDTO>
 ) {
@@ -91,7 +92,7 @@ data class TemplateDto(
             template.fields.forEach { fieldDTO ->
                 fieldDTos.add(FieldDTO.toDTO(fieldDTO))
             }
-            return TemplateDto(template.name, fieldDTos)
+            return TemplateDto(template.id,template.name, fieldDTos)
         }
     }
 }
