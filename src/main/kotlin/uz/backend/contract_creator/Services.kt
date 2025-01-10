@@ -452,15 +452,16 @@ class DocFileService(
     private fun getKeys(paragraph: XWPFParagraph): MutableList<String> {
         val keys: MutableList<String> = mutableListOf()
         paragraph.run {
+            var newText = text
             while (true) {
-                val firstIndex = text.indexOf("##")
+                val firstIndex = newText.indexOf("##")
                 if (firstIndex == -1) break
 
-                val lastIndex = text.indexOf("##", firstIndex + 2)
+                val lastIndex = newText.indexOf("##", firstIndex + 2)
                 if (lastIndex == -1) break
 
-                keys.add(text.substring(firstIndex, lastIndex))
-                break
+                newText = text.substring(firstIndex+2, lastIndex)
+                keys.add(newText)
             }
         }
         return keys
