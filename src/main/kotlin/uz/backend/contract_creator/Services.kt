@@ -1,15 +1,16 @@
 package uz.backend.contract_creator
 
-import jakarta.transaction.Transactional
-import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import com.itextpdf.kernel.pdf.PdfWriter
+
 import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Paragraph
-
+import jakarta.transaction.Transactional
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -412,7 +413,6 @@ class DocFileService(
                 for (paragraph in wordDocument.paragraphs) {
                     document.add(Paragraph(paragraph.text))
                 }
-
                 document.close()
             }
         }
