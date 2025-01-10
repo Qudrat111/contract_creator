@@ -344,8 +344,19 @@ class DocFileService(
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
-            if (getUserId() != it.createdBy) throw AccessDeniedException()
-            getResource(it.contractFilePath)
+            val userId = getUserId()
+            val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
+            userOpt?.let { user ->
+                var found = false
+                for (allowedOperator in it.allowedOperators) {
+                    if(allowedOperator.operator.id == getUserId()){
+                        found = true
+                        break
+                    }
+                }
+                if ((getUserId() != it.createdBy) && !found && (user.role!=RoleEnum.ROLE_DIRECTOR && user.role!=RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
+                getResource(it.contractFilePath)
+            }
 
         }
     }
