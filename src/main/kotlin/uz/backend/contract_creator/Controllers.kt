@@ -103,6 +103,9 @@ class TemplateController(private val docFileService: DocFileService) {
 
     @GetMapping("/all")
     fun getAll() = docFileService.getAllTemplates()
+
+    @PutMapping("update-template/{id}")
+    fun update(@RequestParam("file") file: MultipartFile, @PathVariable id:Long) =docFileService.upDateTemplate(id, file)
 }
 
 @RestController
