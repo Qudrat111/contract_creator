@@ -470,6 +470,23 @@ class DocFileService(
     fun getContractsByClint(clientPassport: String): List<ContractDto> {
         return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
     }
+
+    fun upDateTemplate(id: Long, file: MultipartFile){
+        val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
+        val filename = file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
+        val filePath = "./files/templates/$filename"
+        file.inputStream.use { inputStream ->
+            Files.copy(inputStream, Paths.get(filePath))
+        }
+        val keys = getKeys(filePath)
+        val fields = getFieldsByKeys(keys)
+
+        template.let {
+            it.fields= fields.toMutableList()
+            it.filePath=filePath
+        }
+        templateRepository.save(template)
+    }
 }
 
 @Service
