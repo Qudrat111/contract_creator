@@ -224,20 +224,7 @@ class DocFileService(
 
     fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
-            val filePath = Paths.get("attaches/${it.filePath}").normalize()
-            var resource: Resource?
-            resource = UrlResource(filePath.toUri())
-            if (!resource.exists()) {
-                throw FileNotFoundException("File not found: ${it.filePath}")
-            }
-            var contentType = Files.probeContentType(filePath)
-            if (contentType == null) {
-                contentType = "application/octet-stream" // Fallback content type
-            }
-            return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .body<Resource>(resource)
-
+            getResource(it.filePath)
         }
     }
 
@@ -338,10 +325,9 @@ class DocFileService(
                         fileName = fileName.substringBeforeLast(".")
                         val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
                         convertWordToPdf(
-                            Files.newInputStream(Paths.get(contractFilePathDocx)),
-                            Files.newOutputStream(Paths.get(contractFilePathPdf))
+                            contractFilePathDocx,
+                            contractFilePathPdf
                         )
-
                         contractIds.add(contract.id!!)
                     }
                 } ?: throw TemplateNotFoundException()
@@ -352,21 +338,25 @@ class DocFileService(
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
-            val filePath = Paths.get("attaches/${it.contractFilePath}").normalize()
-            var resource: Resource?
-            resource = UrlResource(filePath.toUri())
-            if (!resource.exists()) {
-                throw FileNotFoundException("File not found: ${it.contractFilePath}")
-            }
-            var contentType = Files.probeContentType(filePath)
-            if (contentType == null) {
-                contentType = "application/octet-stream" // Fallback content type
-            }
-            return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .body<Resource>(resource)
+            getResource(it.contractFilePath)
 
         }
+    }
+
+    private fun getResource(path: String): ResponseEntity<Resource> {
+        val filePath = Paths.get("attaches/${path}").normalize()
+        val resource: Resource?
+        resource = UrlResource(filePath.toUri())
+        if (!resource.exists()) {
+            throw FileNotFoundException("File not found: $path")
+        }
+        var contentType = Files.probeContentType(filePath)
+        if (contentType == null) {
+            contentType = "application/octet-stream" // Fallback content type
+        }
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(contentType))
+            .body(resource)
     }
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
@@ -374,8 +364,8 @@ class DocFileService(
         val optional = userRepository.findById(id)
         if (optional.isEmpty) throw UserNotFoundException()
         contractRepository.findAllByCreatedBy(optional.get()).let {
-            it.forEach {
-                contracts.add(ContractDto.toDTO(it))
+            it.forEach { item ->
+                contracts.add(ContractDto.toDTO(item))
             }
         }
         return contracts
@@ -384,8 +374,8 @@ class DocFileService(
     fun getAllContracts(): List<ContractDto>? {
         val contracts = mutableListOf<ContractDto>()
         contractRepository.findAllNotDeleted().let {
-            it.forEach {
-                contracts.add(ContractDto.toDTO(it))
+            it.forEach { item ->
+                contracts.add(ContractDto.toDTO(item))
             }
         }
         return contracts
@@ -395,6 +385,26 @@ class DocFileService(
         val wordMLPackage = WordprocessingMLPackage.load(inputStream)
         Docx4J.toPDF(wordMLPackage, outputStream)
     }
+
+    private fun convertWordToPdf(inputFile: String, outputFileDir: String) {
+        val processBuilder = ProcessBuilder(
+            "C:\\Program Files\\LibreOffice\\program\\soffice.exe", // Full path to soffice.exe
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", outputFileDir,
+            inputFile // Input file
+        )
+        val process = processBuilder.start()
+        val exitCode = process.waitFor()
+
+        if (exitCode == 0) {
+            println("Conversion successful: $outputFileDir/${File(inputFile).nameWithoutExtension}.pdf")
+        } else {
+            val errorMessage = process.errorStream.bufferedReader().readText()
+            println("Error during conversion: $errorMessage")
+        }
+    }
+
 
     private fun getKey(run: XWPFRun): String? {
         return getKey(run.text())
@@ -484,7 +494,7 @@ class FieldServiceImpl(
         }
 
 
-        val newField: Field;
+        val newField: Field
         updateDto.run {
             if (fieldRepository.existsByName(name!!)) throw ExistsFieldException()
             newField = Field(name, TypeEnum.valueOf(type!!.uppercase()))
