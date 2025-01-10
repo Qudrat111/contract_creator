@@ -23,12 +23,6 @@ repositories {
 }
 
 dependencies {
-    implementation("org.docx4j:docx4j-core:11.5.1")
-    implementation("org.docx4j:docx4j-JAXB-Internal:8.3.8")
-    implementation("org.docx4j:docx4j-export-fo:11.4.9")
-    implementation("org.docx4j:docx4j-JAXB-MOXy:11.4.9")
-    implementation("org.docx4j:docx4j-JAXB-ReferenceImpl:11.4.9")
-
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-security")
     implementation("org.springframework.boot:spring-boot-starter-validation")
@@ -42,6 +36,7 @@ dependencies {
     testImplementation("org.springframework.security:spring-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+    implementation("org.apache.poi:poi:5.4.0")
     implementation("org.apache.poi:poi-ooxml:5.3.0")
     implementation("com.itextpdf:itext7-core:8.0.1")
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
@@ -49,7 +44,6 @@ dependencies {
     implementation("io.jsonwebtoken:jjwt-jackson:0.12.5")
     implementation("com.google.zxing:core:3.5.2")
     implementation("com.google.zxing:javase:3.5.2")
-    implementation("org.apache.poi:poi-ooxml:5.2.3")
 }
 
 kotlin {

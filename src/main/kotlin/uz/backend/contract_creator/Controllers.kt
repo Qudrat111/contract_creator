@@ -16,13 +16,15 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 
     @ExceptionHandler(BaseExceptionHandler::class)
     fun handleAccountException(ex: BaseExceptionHandler): BaseMessage {
+        println("asd1 $ex")
         return ex.getErrorMessage(errorMessageSource)
     }
 
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
-    fun handleMethodArgumentNotValidException(exception: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
-        val errors = exception.bindingResult.fieldErrors.joinToString("\n") {
+    fun handleMethodArgumentNotValidException(ex: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
+        println("asd2 $ex")
+        val errors = ex.bindingResult.fieldErrors.joinToString("\n") {
             "(${it.field}) ${it.defaultMessage} (${
                 errorMessageSource.getMessage(
                     "REJECTED_VALUE", arrayOf(),
@@ -33,12 +35,13 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
         return ResponseEntity.badRequest().body(BaseMessage(400, errors))
     }
 
-//    @ExceptionHandler(Exception::class)
-//    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
-//    @ResponseBody
-//    fun handleGeneralException(ex: Exception): BaseMessage {
-//        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
-//    }
+    @ExceptionHandler(Exception::class)
+    @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
+    @ResponseBody
+    fun handleGeneralException(ex: Exception): BaseMessage {
+        println("asd3 $ex")
+        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
+    }
 }
 
 
@@ -132,6 +135,12 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll() = docFileService.getAllContracts()
+
+
+    @GetMapping("asd")
+    fun aaaaaa() {
+        throw TemplateNotFoundException()
+    }
 }
 
 
