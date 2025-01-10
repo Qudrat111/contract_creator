@@ -316,10 +316,9 @@ class DocFileService(
                         fileName = fileName.substringBeforeLast(".")
                         val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
                         convertWordToPdf(
-                            Files.newInputStream(Paths.get(contractFilePathDocx)),
-                            Files.newOutputStream(Paths.get(contractFilePathPdf))
+                            contractFilePathDocx,
+                            contractFilePathPdf
                         )
-
                         contractIds.add(contract.id!!)
                     }
                 } ?: throw TemplateNotFoundException()
@@ -373,6 +372,26 @@ class DocFileService(
         val wordMLPackage = WordprocessingMLPackage.load(inputStream)
         Docx4J.toPDF(wordMLPackage, outputStream)
     }
+
+    private fun convertWordToPdf(inputFile: String, outputFileDir: String) {
+        val processBuilder = ProcessBuilder(
+            "C:\\Program Files\\LibreOffice\\program\\soffice.exe", // Full path to soffice.exe
+            "--headless",
+            "--convert-to", "pdf",
+            "--outdir", outputFileDir,
+            inputFile // Input file
+        )
+        val process = processBuilder.start()
+        val exitCode = process.waitFor()
+
+        if (exitCode == 0) {
+            println("Conversion successful: $outputFileDir/${File(inputFile).nameWithoutExtension}.pdf")
+        } else {
+            val errorMessage = process.errorStream.bufferedReader().readText()
+            println("Error during conversion: $errorMessage")
+        }
+    }
+
 
     private fun getKey(run: XWPFRun): String? {
         return getKey(run.text())
