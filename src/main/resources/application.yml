@@ -10,7 +10,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/contract_creator
     username: postgres
-    password: Sobirov0717
+    password: 123
     driver-class-name: org.postgresql.Driver
 
   jpa:
