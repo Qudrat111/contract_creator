@@ -52,8 +52,8 @@ class User(
 @Entity
 class Template(
     @Column(nullable = false) val name: String,
-    @Column(nullable = false) val filePath: String,
-    @ManyToMany val fields: MutableList<Field>,
+    @Column(nullable = false) var filePath: String,
+    @ManyToMany var fields: MutableList<Field>,
 ) : BaseEntity() {
     fun toResponseDto(): TemplateResponseDto {
         return TemplateResponseDto(id!!, name, fields.map { it.toResponseDto() }.toMutableList())
