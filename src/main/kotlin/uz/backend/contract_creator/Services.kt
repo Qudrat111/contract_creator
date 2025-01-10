@@ -156,15 +156,15 @@ class DocFileService(
                 if (lastIndex > -1) {
                     val key = text.substring(firstIndex, lastIndex)
                     keyValueMap[key]?.let { value ->
-                        var newText: String? =
+                        val newText: String =
                             text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
-                        if (text.indexOf("##", lastIndex + 2) > -1) {
-                            newText = processParagraph(this, keyValueMap)
-                        }
                         for (run in paragraph.runs) {
                             run.setText("", 0)
                         }
                         paragraph.createRun().setText(newText)
+                        if (newText.contains("##")) {
+                            processParagraph(paragraph, keyValueMap)
+                        }
                         return newText
                     }
                 }
