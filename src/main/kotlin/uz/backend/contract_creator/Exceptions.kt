@@ -53,3 +53,8 @@ class ContractNotFoundException():BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.CONTRACT_NOT_FOUND
 
 }
+
+class AccessDeniedException():BaseExceptionHandler(){
+    override fun errorCode() = ErrorCodes.ACCESS_DENIED
+
+}

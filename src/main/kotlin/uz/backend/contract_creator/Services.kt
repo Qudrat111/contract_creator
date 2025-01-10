@@ -263,6 +263,7 @@ class DocFileService(
         for (contractId in downloadContractDTO.contractIds) {
             downloadContractDTO.let {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
+                    if (getUserId() != contract.createdBy) throw AccessDeniedException()
                     contract.run {
                         var filePathStr = contractFilePath.substringBeforeLast(".")
                         val fileType = when (it.fileType.lowercase()) {
@@ -275,7 +276,6 @@ class DocFileService(
                     }
                 }
             }
-            throw RuntimeException("something went wrong")
         }
         val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
 
@@ -313,7 +313,7 @@ class DocFileService(
                         val fileType = fileName.substringAfterLast(".")
                         fileName = fileName.substringBeforeLast(".")
                         fileName = fileName.substring(0, fileName.length - 36)
-                        fileName = fileName + UUID.randomUUID() + "." + fileType
+                        fileName = fileName + UUID.randomUUID() + ".docx"
                         val contractFilePathDocx = "./files/contracts/${fileName}"
                         Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
@@ -344,13 +344,14 @@ class DocFileService(
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
+            if (getUserId() != it.createdBy) throw AccessDeniedException()
             getResource(it.contractFilePath)
 
         }
     }
 
     private fun getResource(path: String): ResponseEntity<Resource> {
-        val filePath = Paths.get("attaches/${path}").normalize()
+        val filePath = Paths.get(path).normalize()
         val resource: Resource?
         resource = UrlResource(filePath.toUri())
         if (!resource.exists()) {
@@ -367,9 +368,7 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        val optional = userRepository.findById(id)
-        if (optional.isEmpty) throw UserNotFoundException()
-        contractRepository.findAllByCreatedBy(optional.get()).let {
+        contractRepository.findAllByCreatedBy(id).let {
             it.forEach { item ->
                 contracts.add(ContractDto.toDTO(item))
             }
@@ -413,7 +412,7 @@ class DocFileService(
             "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
             "--headless",
             "--convert-to", "pdf",
-            "--outdir", outputFileDir,
+            "--outdir", outputFileDir.substringBeforeLast("/"),
             inputFile
         )
         val process = processBuilder.start()
@@ -460,8 +459,8 @@ class DocFileService(
                 val lastIndex = newText.indexOf("##", firstIndex + 2)
                 if (lastIndex == -1) break
 
-                val key = newText.substring(firstIndex+2, lastIndex)
-                newText = newText.substring(lastIndex+2)
+                val key = newText.substring(firstIndex + 2, lastIndex)
+                newText = newText.substring(lastIndex + 2)
                 keys.add(key)
             }
         }
@@ -472,7 +471,7 @@ class DocFileService(
         return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
     }
 
-    fun upDateTemplate(id: Long, file: MultipartFile){
+    fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
         val filename = file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
         val filePath = "./files/templates/$filename"
@@ -483,8 +482,8 @@ class DocFileService(
         val fields = getFieldsByKeys(keys)
 
         template.let {
-            it.fields= fields.toMutableList()
-            it.filePath=filePath
+            it.fields = fields.toMutableList()
+            it.filePath = filePath
         }
         templateRepository.save(template)
     }
