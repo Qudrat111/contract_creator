@@ -54,7 +54,7 @@ class AuthServiceImpl(
     private val authenticationProvider: AuthenticationProvider,
     private val userRepository: UserRepository,
     private val passwordEncoder: PasswordEncoder,
-    private val jwtProvider: JwtProvider
+    private val jwtProvider: JwtProvider,
 ) : AuthService {
     override fun logIn(signInDTO: LogInDTO): String {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
@@ -98,7 +98,7 @@ interface UserService {
 class UserServiceImpl(
     private val userRepository: UserRepository,
     private val contractRepository: ContractRepository,
-    private val contractAllowedUserRepository: ContactAllowedUserRepository
+    private val contractAllowedUserRepository: ContactAllowedUserRepository,
 ) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
@@ -132,7 +132,7 @@ class DocFileService(
     private val contractRepository: ContractRepository,
     private val fieldRepository: FieldRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository,
-    private val userRepository: UserRepository
+    private val userRepository: UserRepository,
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -433,10 +433,10 @@ class DocFileService(
     }
 
     private fun getKey(text: String): String? {
-        if (text.contains("##")) {
-            val firstIndex = text.indexOf("##") + 2
-            if (text.substring(firstIndex).contains("##")) {
-                val lastIndex = text.indexOf("##", firstIndex)
+        val firstIndex = text.indexOf("##") + 2
+        if (firstIndex > 1) {
+            val lastIndex = text.indexOf("##", firstIndex)
+            if (lastIndex > -1) {
                 return text.substring(firstIndex, lastIndex)
             }
         }
@@ -450,8 +450,9 @@ class DocFileService(
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
         val keys = mutableListOf<String>()
-        for (table in document.tables)
+        for (table in document.tables) {
             keys.addAll(getKeys(table))
+        }
         keys.addAll(getKeys(document.paragraphs))
         return keys
     }
