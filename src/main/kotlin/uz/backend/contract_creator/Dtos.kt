@@ -70,7 +70,7 @@ data class FieldUpdateDTO(
     val type: String?
 )
 
-data class DownloadContractDTO (
+data class DownloadContractDTO(
     @NotNull val contractIds: List<Long>,
     @NotNull val fileType: String
 )
@@ -111,7 +111,13 @@ data class ContractDto(
 data class TemplateResponseDto(
     val id: Long,
     val name: String,
-    val fields: MutableList<Field>,
+    val fields: MutableList<FieldResponseDto>,
+)
+
+data class FieldResponseDto(
+    var id: Long,
+    var name: String,
+    var type: TypeEnum
 )
 
 data class ContractIdsDto(

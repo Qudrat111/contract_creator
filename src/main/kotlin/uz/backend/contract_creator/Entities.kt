@@ -55,8 +55,8 @@ class Template(
     @Column(nullable = false) val filePath: String,
     @ManyToMany val fields: MutableList<Field>,
 ) : BaseEntity() {
-    fun toResponseDto():TemplateResponseDto{
-        return TemplateResponseDto(id!!,name,fields)
+    fun toResponseDto(): TemplateResponseDto {
+        return TemplateResponseDto(id!!, name, fields.map { it.toResponseDto() }.toMutableList())
     }
 }
 
@@ -64,7 +64,11 @@ class Template(
 class Field(
     @Column(nullable = false, unique = true) var name: String,
     @Enumerated(EnumType.STRING) var type: TypeEnum
-) : BaseEntity()
+) : BaseEntity() {
+    fun toResponseDto(): FieldResponseDto {
+        return FieldResponseDto(id!!, name, type)
+    }
+}
 
 @Entity(name = "contracts")
 class Contract(
@@ -72,7 +76,7 @@ class Contract(
     @Column(nullable = false) val clientPassport: String,
     @Column(nullable = false) val contractFilePath: String,
     @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
-    ) : BaseEntity()
+) : BaseEntity()
 
 @Entity
 class ContractFieldValue(
@@ -80,7 +84,7 @@ class ContractFieldValue(
     @ManyToOne val contract: Contract,
     @ManyToOne val field: Field,
     @Column(nullable = false) val value: String,
-    ) : BaseEntity()
+) : BaseEntity()
 
 @Entity
 class ContractAllowedUser(
@@ -88,4 +92,4 @@ class ContractAllowedUser(
     @ManyToOne @JoinColumn(nullable = false) val operator: User,
     @ManyToOne @JoinColumn(nullable = false) val contract: Contract
 
-): BaseEntity()
+) : BaseEntity()
