@@ -2,8 +2,14 @@ package uz.backend.contract_creator
 
 import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.*
-import org.docx4j.Docx4J
-import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+//import org.docx4j.Docx4J
+//import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Paragraph
+
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -23,6 +29,8 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.absolute
+import kotlin.io.path.name
 
 
 interface AuthService : UserDetailsService {
@@ -207,7 +215,7 @@ class DocFileService(
         return keys
     }
 
-    fun createNewTemplate(file: MultipartFile, name: String) {
+    fun createNewTemplate(file: MultipartFile, name: String): TemplateResponseDto {
         val filename = file.originalFilename!!.substringBeforeLast(".") + "-" + UUID.randomUUID() + ".docx"
         val filePath = "./files/templates/$filename"
         file.inputStream.use { inputStream ->
@@ -215,7 +223,9 @@ class DocFileService(
         }
         val keys = getKeys(filePath)
         val fields = getFieldsByKeys(keys)
-        templateRepository.save(Template(name, filePath, fields.toMutableList()))
+        return templateRepository
+            .save(Template(name, filePath, fields.toMutableList()))
+            .toResponseDto()
     }
 
     fun deleteTemplate(id: Long) {
@@ -293,7 +303,7 @@ class DocFileService(
     }
 
     @Transactional
-    fun addContract(createContractDTOs: List<AddContractDTO>): List<Long> {
+    fun addContract(createContractDTOs: List<AddContractDTO>): ContractIdsDto {
         val contractIds: MutableList<Long> = mutableListOf()
         for (createContractDTO in createContractDTOs) {
             createContractDTO.run {
@@ -310,10 +320,6 @@ class DocFileService(
                         changeAllKeysToValues(templateId, contractFilePathDocx, fields)
                         val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
 
-//                        val contractFieldValueMap = fields.map { fieldEntry ->
-//                            val fieldOpt = fieldRepository.findByName(fieldEntry.key)
-//                            fieldOpt?.let { field -> ContractFieldValue(contract, field, fieldEntry.value) }
-//                        }
                         val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
                         for (fieldEntry in fields.entries) {
                             fieldRepository.findByName(fieldEntry.key)?.let {
@@ -333,7 +339,7 @@ class DocFileService(
                 } ?: throw TemplateNotFoundException()
             }
         }
-        return contractIds
+        return ContractIdsDto(contractIds)
     }
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
@@ -382,8 +388,24 @@ class DocFileService(
     }
 
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
-        val wordMLPackage = WordprocessingMLPackage.load(inputStream)
-        Docx4J.toPDF(wordMLPackage, outputStream)
+//        val wordMLPackage = WordprocessingMLPackage.load(inputStream)
+//        Docx4J.toPDF(wordMLPackage, outputStream)
+
+
+        Paths.get("asd").absolute().name
+        XWPFDocument(inputStream).use { wordDocument ->
+            PdfWriter(outputStream).use { pdfWriter ->
+                val pdfDocument = PdfDocument(pdfWriter)
+                val document = Document(pdfDocument)
+
+                // Extract paragraphs and write them to the PDF
+                for (paragraph in wordDocument.paragraphs) {
+                    document.add(Paragraph(paragraph.text))
+                }
+
+                document.close()
+            }
+        }
     }
 
     private fun convertWordToPdf(inputFile: String, outputFileDir: String) {

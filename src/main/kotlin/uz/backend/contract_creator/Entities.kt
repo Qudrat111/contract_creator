@@ -54,7 +54,11 @@ class Template(
     @Column(nullable = false) val name: String,
     @Column(nullable = false) val filePath: String,
     @ManyToMany val fields: MutableList<Field>,
-) : BaseEntity()
+) : BaseEntity() {
+    fun toResponseDto():TemplateResponseDto{
+        return TemplateResponseDto(id!!,name,fields)
+    }
+}
 
 @Entity
 class Field(

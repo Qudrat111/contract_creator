@@ -1,5 +1,6 @@
 package uz.backend.contract_creator
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -12,6 +13,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
@@ -25,6 +28,7 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.stereotype.Component
@@ -50,7 +54,7 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
         filterChain.doFilter(request, response)
     }
 
-    @Throws(IOException::class)
+//    @Throws(IOException::class)
     private fun checkAuth(request: HttpServletRequest, response: HttpServletResponse) {
         val authHeader = request.getHeader(HttpHeaders.AUTHORIZATION)
 
@@ -68,7 +72,9 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
             response.sendError(401)
         }
 
+        println("qwe1")
         if (Objects.isNull(username)) throw BadCredentialsException()
+        println("qwe2")
 
         val userDetails: UserDetails = authService.loadUserByUsername(username)
 
@@ -85,14 +91,14 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
 class JwtProvider {
 
     @Value("\${jwt.secretKey}")
-    val secretKey: String? = null
+    val secretKey: String = "55d5430e17864da9db4h8dbd64a63777be5c1a7f06k92197c9b8113a3b552l60"
 
     @Value("\${jwt.expireDate}")
-    val expireDate: Int? = null
+    val expire: Int = 7
 
 
     fun generateToken(email: String?): String {
-        val expireDate = Date(System.currentTimeMillis() + 30 * 24 * 60 * 60 * 1000L)
+        val expireDate = Date(System.currentTimeMillis() + expire.toLong() * 24 * 60 * 60 * 1000L)
 
         return Jwts.builder()
             .subject(email)
@@ -151,12 +157,10 @@ class SecurityConfig(
 
     }
 
-
     @Bean
     fun passwordEncoder(): PasswordEncoder {
         return BCryptPasswordEncoder()
     }
-
 
     @Bean
     fun authenticationProvider(): AuthenticationProvider {
@@ -165,6 +169,4 @@ class SecurityConfig(
         provider.setUserDetailsService(authService)
         return provider
     }
-
-    //333
 }

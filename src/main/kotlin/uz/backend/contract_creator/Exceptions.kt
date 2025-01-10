@@ -10,7 +10,6 @@ sealed class BaseExceptionHandler : RuntimeException() {
     open fun getAllArguments(): Array<Any?>? = null
 
     fun getErrorMessage(resourceBundle: ResourceBundleMessageSource): BaseMessage {
-
         val message = try {
             resourceBundle.getMessage(
                 errorCode().name, getAllArguments(), LocaleContextHolder.getLocale()
@@ -19,9 +18,7 @@ sealed class BaseExceptionHandler : RuntimeException() {
             e.message
         }
         return BaseMessage(errorCode().code, message)
-
     }
-
 }
 
 class UserNotFoundException() : BaseExceptionHandler() {

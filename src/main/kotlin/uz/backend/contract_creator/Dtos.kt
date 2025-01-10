@@ -107,3 +107,13 @@ data class ContractDto(
         }
     }
 }
+
+data class TemplateResponseDto(
+    val id: Long,
+    val name: String,
+    val fields: MutableList<Field>,
+)
+
+data class ContractIdsDto(
+    val contractIds: MutableList<Long> = mutableListOf()
+)
