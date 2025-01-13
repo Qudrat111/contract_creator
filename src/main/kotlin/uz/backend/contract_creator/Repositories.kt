@@ -46,6 +46,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
     override fun findAllNotDeletedForPageable(pageable: Pageable): Page<T> =
         findAll(isNotDeletedSpecification, pageable)
 
+    @Transactional
     override fun trashList(ids: List<Long>): List<T?> = ids.map { trash(it) }
 
     @Transactional
@@ -57,7 +58,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 @Repository
 interface UserRepository : BaseRepository<User> {
 
-    fun findByUserName(username: String): User?
+    fun findByUserNameAndDeletedFalse(username: String): User?
 }
 
 interface TemplateRepository : BaseRepository<Template>
@@ -68,11 +69,10 @@ interface FieldRepository : BaseRepository<Field> {
 
 @Repository
 interface ContractRepository : BaseRepository<Contract> {
-    fun findByClientPassportAndDeletedFalse(clientPassport: String): MutableList<Contract>
-
-    fun findAllByCreatedBy(createdBy: Long):List<Contract>
+    fun findAllByCreatedBy(createdBy: Long): List<Contract>
 
 }
+
 @Repository
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
     fun findAllByContractId(contractId: Long):List<ContractFieldValue>

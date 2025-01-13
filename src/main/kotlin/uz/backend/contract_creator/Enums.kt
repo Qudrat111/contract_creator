@@ -25,3 +25,14 @@ enum class ErrorCodes(val code: Int) {
     ACCESS_DENIED(107),
     INVALID_FILE_TYPE(108),
 }
+
+enum class TaskStatusEnum {
+    PENDING,
+    FAILED,
+    FINISHED
+}
+
+enum class FileTypeEnum{
+    PDF,
+    DOCX
+}

@@ -1,11 +1,12 @@
 package uz.backend.contract_creator
 
-import jakarta.transaction.Transactional
+import org.apache.poi.xwpf.usermodel.*
 
+import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-
+import org.apache.poi.xwpf.usermodel.*
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -28,7 +29,7 @@ import java.util.zip.ZipOutputStream
 
 interface AuthService : UserDetailsService {
 
-    fun logIn(signInDTO: LogInDTO): String
+    fun logIn(signInDTO: LogInDTO): TokenDTO
     fun signIn(signInDTO: SignInDTO): UserDTO
 
 }
@@ -39,7 +40,6 @@ interface FieldService {
     fun getAllField(): List<FieldGetDto>
     fun updateField(id: Long, updateDto: FieldUpdateDTO)
     fun deleteField(id: Long)
-
 }
 
 @Service
@@ -49,7 +49,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): String {
+    override fun logIn(signInDTO: LogInDTO): TokenDTO {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
@@ -62,7 +62,11 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        return token
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
+
+        val userDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+
+        return userDTO
     }
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
@@ -76,7 +80,7 @@ class AuthServiceImpl(
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
+        return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
 
@@ -358,6 +362,43 @@ class DocFileService(
         return ContractIdsDto(contractIds)
     }
 
+    fun addContract(addContract: AddContractDTO): List<ContractFieldValueDto> {
+        val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
+        addContract.contract.forEach { item ->
+            templateRepository.findByIdAndDeletedFalse(item.templateId)?.let { template ->
+                contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
+                    fieldRepository.findByName(item.fieldName)?.let { field ->
+                        contractFieldValueRepository.saveAndRefresh(ContractFieldValue(contract, field, item.value))
+                            .let {
+                                addContractFieldValues.add(AddContractDTO.toResponse(it))
+                            }
+                    } ?: throw FieldNotFoundException()
+                }
+            } ?: throw TemplateNotFoundException()
+
+        }
+        return addContractFieldValues
+    }
+
+    fun updateContract(updateContract: UpdateContractDTO): List<ContractFieldValueDto> {
+        val updateContractFieldValues = mutableListOf<ContractFieldValueDto>()
+        updateContract.contactFieldValues.forEach { item ->
+            contractRepository.findByIdAndDeletedFalse(item.contractId)?.let { contract ->
+                fieldRepository.findByName(item.fieldName)?.let { field ->
+                    contractFieldValueRepository.save(ContractFieldValue(contract, field, item.value)).let {
+                        updateContractFieldValues.add(UpdateContractDTO.toResponse(it))
+                    }
+                } ?: throw FieldNotFoundException()
+            } ?: throw ContractNotFoundException()
+        }
+        return updateContractFieldValues
+    }
+
+    fun deleteContract(id: Long) {
+        contractRepository.findByIdAndDeletedFalse(id)?.let { contractRepository.trash(id) }
+            ?: throw ContractNotFoundException()
+    }
+
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val userId = getUserId()
@@ -371,7 +412,7 @@ class DocFileService(
                     }
                 }
                 if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
-                getResource(it.contractFilePath!!)
+                it.contractFilePath?.let { path -> getResource(path) }
             }
 
         }
@@ -389,8 +430,7 @@ class DocFileService(
                 ).body(resource)
             }
             throw FileNotFoundException()
-        }
-    }
+
 
     private fun getResource(path: String): ResponseEntity<Resource> {
         val filePath = Paths.get(path).normalize()
@@ -452,11 +492,11 @@ class DocFileService(
 
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
-        val keys = mutableListOf<String>()
+        val keys = mutableSetOf<String>()
         for (table in document.tables)
             keys.addAll(getKeys(table))
         keys.addAll(getKeys(document.paragraphs))
-        return keys
+        return keys.toMutableList()
     }
 
     private fun getKeys(table: XWPFTable): MutableList<String> {
@@ -493,9 +533,6 @@ class DocFileService(
         return keys
     }
 
-    fun getContractsByClint(clientPassport: String): List<ContractDto> {
-        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
-    }
 
     fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()

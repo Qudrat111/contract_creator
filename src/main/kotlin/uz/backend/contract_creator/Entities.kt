@@ -23,7 +23,7 @@ class BaseEntity(
     @Column(nullable = false) @ColumnDefault(value = "false") var deleted: Boolean = false
 )
 
-@Entity()
+@Entity(name = "users")
 @Table(name = "users")
 class User(
     @Column(nullable = false) val firstName: String,
@@ -72,8 +72,8 @@ class Field(
 
 @Entity(name = "contracts")
 class Contract(
-    @ManyToOne val template: Template? = null,
-    var contractFilePath: String?,
+    @ManyToOne val template: Template,
+    val contractFilePath: String?,
     @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
 ) : BaseEntity()
 
@@ -92,3 +92,11 @@ class ContractAllowedUser(
     @ManyToOne @JoinColumn(nullable = false) val contract: Contract
 
 ) : BaseEntity()
+
+@Entity
+class Job(
+    val status : TaskStatusEnum,
+    val fileType: FileTypeEnum,
+    val zipFilePath: String,
+    @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
+): BaseEntity()

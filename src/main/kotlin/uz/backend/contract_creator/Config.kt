@@ -16,7 +16,7 @@ class WebMvcConfig : WebMvcConfigurer {
 
     @Bean
     fun userIdAuditorAware() =
-        AuditorAware<Long> { Optional.ofNullable(SecurityContextHolder.getContext().getUserId()) }
+        AuditorAware { Optional.ofNullable(SecurityContextHolder.getContext().getUserId()) }
 
     @Bean
     fun localeResolver() = SessionLocaleResolver().apply { setDefaultLocale(Locale("uz")) }

@@ -117,12 +117,6 @@ class TemplateController(private val docFileService: DocFileService) {
 class ContractController(
     private val docFileService: DocFileService,
 ) {
-    @GetMapping("get-by-clint/{clientPassport}")
-    fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
-
-    @GetMapping("/add")
-    fun addContract(@RequestBody contractDTOs: List<GenerateContractDTO>) = docFileService.addContract(contractDTOs)
-
     @PostMapping("/generate")
     fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = docFileService.generateContract(generateContractDTO)
 
@@ -132,9 +126,35 @@ class ContractController(
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
 
-    @GetMapping("/get")
-    fun getContractsById() = docFileService.getAllOperatorContracts(getUserId()!!)
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
+    )
+    @PostMapping("/add")
+    fun addContract(@RequestBody contractDTOs: AddContractDTO) = docFileService.addContract(contractDTOs)
 
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
+    )
+    @PutMapping
+    fun updateContract(@RequestBody updateContractDTO: UpdateContractDTO) =
+        docFileService.updateContract(updateContractDTO)
+
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
+    )
+    @DeleteMapping("/{id}")
+    fun deleteContract(@PathVariable("id") id: Long) = docFileService.deleteContract(id)
+
+    @PreAuthorize(
+        "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
+                "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
+    )
+
+    @GetMapping("/getByOperatorId")
+    fun getContractsByOperatorId() = docFileService.getAllOperatorContracts(getUserId()!!)
 
     @GetMapping
     @PreAuthorize(
@@ -152,7 +172,7 @@ class UserController(
 ) {
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
-    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService.changeRole(userId,role)
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService.changeRole(userId, role)
 
     @GetMapping
     @PreAuthorize(

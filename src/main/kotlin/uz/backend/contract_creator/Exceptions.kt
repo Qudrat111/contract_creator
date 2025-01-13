@@ -21,40 +21,40 @@ sealed class BaseExceptionHandler : RuntimeException() {
     }
 }
 
-class UserNotFoundException() : BaseExceptionHandler() {
+class UserNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.USER_NOT_FOUND
 }
 
-class BadCredentialsException() : BaseExceptionHandler() {
+class BadCredentialsException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.BAD_CREDENTIALS
 }
 
-class FieldNotFoundException() : BaseExceptionHandler() {
+class FieldNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FIELD_NOT_FOUND
 }
 
-class ExistsFieldException() : BaseExceptionHandler() {
+class ExistsFieldException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.EXISTS_FIELD
 }
 
-class FileNotFoundException() : BaseExceptionHandler() {
+class FileNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FILE_NOT_FOUND
 }
 
-class TemplateNotFoundException() : BaseExceptionHandler() {
+class TemplateNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.TEMPLATE_NOT_FOUND
 }
 
-class FieldNotBelongToTemplate() : BaseExceptionHandler() {
+class FieldNotBelongToTemplate : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FILED_NOT_BELONG_TEMPLATE
 }
 
-class ContractNotFoundException():BaseExceptionHandler(){
+class ContractNotFoundException:BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.CONTRACT_NOT_FOUND
 
 }
 
-class AccessDeniedException():BaseExceptionHandler(){
+class AccessDeniedException:BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.ACCESS_DENIED
 }
 

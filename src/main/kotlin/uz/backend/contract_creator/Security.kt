@@ -1,6 +1,5 @@
 package uz.backend.contract_creator
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
@@ -13,8 +12,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Lazy
 import org.springframework.http.HttpHeaders
-import org.springframework.http.HttpStatus
-import org.springframework.http.MediaType
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
@@ -28,7 +25,6 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.stereotype.Component
@@ -38,11 +34,8 @@ import java.util.*
 import javax.crypto.SecretKey
 
 @Component
-class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) :
+class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val authService: AuthService) :
     OncePerRequestFilter() {
-    private val jwtProvider: JwtProvider = jwtProvider
-
-    private val authService: AuthService = authService
 
     @Throws(ServletException::class, IOException::class)
     override fun doFilterInternal(
@@ -54,7 +47,7 @@ class JwtFilter(@Lazy jwtProvider: JwtProvider, @Lazy authService: AuthService) 
         filterChain.doFilter(request, response)
     }
 
-//    @Throws(IOException::class)
+    //    @Throws(IOException::class)
     private fun checkAuth(request: HttpServletRequest, response: HttpServletResponse) {
         val authHeader = request.getHeader(HttpHeaders.AUTHORIZATION)
 

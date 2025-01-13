@@ -76,14 +76,37 @@ data class GenerateContractDTO(
 )
 
 data class AddContractDTO(
-    @NotNull val templateId: Long,
-    @NotNull val fields: Map<String, String>,
+    @NotNull val contract: List<ContractDTO>,
+) {
+    companion object {
+        fun toResponse(contractFiledValue: ContractFieldValue) =
+            ContractFieldValueDto(
+                contractFiledValue.contract.id!!,
+                contractFiledValue.field.name,
+                contractFiledValue.value
+            )
+    }
+}
+
+data class ContractDTO(
+    val templateId: Long,
+    val fieldName: String,
+    val value: String
+)
+
+data class ContractFieldValueDto(
+    val contractId: Long,
+    val fieldName: String,
+    val value: String
 )
 
 data class UpdateContractDTO(
-    @NotNull val contractId: Long,
-    @NotNull val fields: Map<String, String>,
-)
+    @NotNull val contactFieldValues: List<ContractFieldValueDto>
+) {
+    companion object {
+        fun toResponse(contractFiledValue: ContractFieldValue) = AddContractDTO.toResponse(contractFiledValue)
+    }
+}
 
 data class TemplateDto(
     val id: Long?,
@@ -107,7 +130,7 @@ data class ContractDto(
 ) {
     companion object {
         fun toDTO(it: Contract): ContractDto {
-            return ContractDto(it.id!!, it.template?.name!!)
+            return ContractDto(it.id!!, it.template.name)
         }
     }
 }
@@ -126,6 +149,11 @@ data class FieldResponseDto(
 
 data class ContractIdsDto(
     val contractIds: MutableList<Long> = mutableListOf()
+)
+
+class TokenDTO(
+    val token: String,
+    val userDTO: UserDTO
 )
 
 data class FilePathDTO(
