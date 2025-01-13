@@ -1,13 +1,9 @@
 package uz.backend.contract_creator
 
-//import org.docx4j.Docx4J
-//import org.docx4j.openpackaging.packages.WordprocessingMLPackage
-
 import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.apache.poi.xwpf.usermodel.*
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -65,9 +61,9 @@ class AuthServiceImpl(
 
         val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
 
-        val userDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+        val userTokenDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
 
-        return userDTO
+        return userTokenDTO
     }
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
