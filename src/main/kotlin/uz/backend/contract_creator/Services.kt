@@ -78,7 +78,6 @@ class AuthServiceImpl(
 
 
     override fun loadUserByUsername(username: String): UserDetails {
-
         return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
@@ -374,7 +373,6 @@ class DocFileService(
                     } ?: throw FieldNotFoundException()
                 }
             } ?: throw TemplateNotFoundException()
-
         }
         return addContractFieldValues
     }

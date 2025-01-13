@@ -71,6 +71,7 @@ interface FieldRepository : BaseRepository<Field> {
 interface ContractRepository : BaseRepository<Contract> {
     fun findAllByCreatedBy(createdBy: Long): List<Contract>
 
+
 }
 
 @Repository
