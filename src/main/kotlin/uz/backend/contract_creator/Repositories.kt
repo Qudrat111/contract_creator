@@ -65,6 +65,7 @@ interface TemplateRepository : BaseRepository<Template>
 interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
     fun findByName(name: String): Field?
+    fun findByNameAndDeletedFalse(name:String): Field?
 }
 
 @Repository

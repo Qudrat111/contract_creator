@@ -1,6 +1,5 @@
 package uz.backend.contract_creator
 
-import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
@@ -128,6 +127,7 @@ class DocFileService(
     private val userRepository: UserRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository,
     private val jobRepository: JobRepository,
+    private val fieldService: FieldService,
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -331,22 +331,42 @@ class DocFileService(
         return map
     }
 
+//
+//    fun addContract(addContract: List<CreateContractDTO>): List<ContractFieldValueDto> {
+//        val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
+//        addContract.forEach { item ->
+//            templateRepository.findByIdAndDeletedFalse(item.templateId)?.let { template ->
+//                contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
+//                    fieldRepository.findByName(item.fieldName)?.let { field ->
+//                        contractFieldValueRepository.saveAndRefresh(ContractFieldValue(contract, field, item.value))
+//                            .let {
+//                                addContractFieldValues.add(AddContractDTO.toResponse(it))
+//                            }
+//                    } ?: throw FieldNotFoundException()
+//                }
+//            } ?: throw TemplateNotFoundException()
+//        }
+//        return addContractFieldValues
 
-    fun addContract(addContract: List<CreateContractDTO>): List<ContractFieldValueDto> {
-        val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
-        addContract.forEach { item ->
-            templateRepository.findByIdAndDeletedFalse(item.templateId)?.let { template ->
-                contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
-                    fieldRepository.findByName(item.fieldName)?.let { field ->
-                        contractFieldValueRepository.saveAndRefresh(ContractFieldValue(contract, field, item.value))
-                            .let {
-                                addContractFieldValues.add(AddContractDTO.toResponse(it))
-                            }
-                    } ?: throw FieldNotFoundException()
-                }
-            } ?: throw TemplateNotFoundException()
+//    }
+
+    fun addContract(addContractDTO: List<CreateContractDTO>): List<ContractDto>{
+
+        val contracts: MutableList<ContractDto> = mutableListOf()
+        for (contractDTO in addContractDTO) {
+            val contract = contractDTO.let {
+                val template =
+                    templateRepository.findByIdAndDeletedFalse(it.templateId) ?: throw TemplateNotFoundException()
+                contractRepository.save(Contract(template, null, mutableListOf()))
+            }
+            for (field in contractDTO.fields) {
+                val key = fieldRepository.findByNameAndDeletedFalse(field.key) ?: throw FieldNotFoundException()
+                contractFieldValueRepository.save(ContractFieldValue(contract,key,field.value))
+
+            }
+            contracts.add(ContractDto.toDTO(contract))
         }
-        return addContractFieldValues
+        return contracts
     }
 
     fun updateContract(updateContract: UpdateContractDTO): List<ContractFieldValueDto> {
@@ -526,12 +546,12 @@ class DocFileService(
         templateRepository.save(template)
     }
 
-    fun getJobs(): List<JobResponseDTO>{
+    fun getJobs(): List<JobResponseDTO> {
         val userId = getUserId()
         val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
         return jobs.map {
             val dto = it.toResponseDTO()
-            if(dto.status == TaskStatusEnum.FINISHED)
+            if (dto.status == TaskStatusEnum.FINISHED)
                 dto.hashCode = it.hashCode
             dto
         }
