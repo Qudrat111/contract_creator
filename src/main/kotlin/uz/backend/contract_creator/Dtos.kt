@@ -76,7 +76,7 @@ data class GenerateContractDTO(
 )
 
 data class AddContractDTO(
-    @NotNull val contract: List<ContractDTO>,
+    val contract: List<CreateContractDTO>,
 ) {
     companion object {
         fun toResponse(contractFiledValue: ContractFieldValue) =
@@ -88,10 +88,9 @@ data class AddContractDTO(
     }
 }
 
-data class ContractDTO(
+data class CreateContractDTO(
     val templateId: Long,
-    val fieldName: String,
-    val value: String
+    val fields: MutableMap<String,String>
 )
 
 data class ContractFieldValueDto(
@@ -159,3 +158,17 @@ class TokenDTO(
 data class FilePathDTO(
     val path: String,
 )
+
+data class JobResponseDTO(
+    val fileType: FileTypeEnum,
+    val status: TaskStatusEnum,
+    var hashCode: String?
+){
+    companion object{
+        fun toResponse(job: Job): JobResponseDTO {
+            return job.run {
+                JobResponseDTO(fileType,status,hashCode)
+            }
+        }
+    }
+}

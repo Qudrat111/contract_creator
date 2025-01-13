@@ -120,8 +120,8 @@ class ContractController(
     @PostMapping("/generate")
     fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = docFileService.generateContract(generateContractDTO)
 
-    @GetMapping("/download")
-    fun downloadContract(@RequestBody filePathDTO: FilePathDTO) = docFileService.downloadContract(filePathDTO)
+    @GetMapping("/download/{hashCode}")
+    fun downloadContract(@PathVariable hashCode: String) = docFileService.downloadContract(hashCode)
 
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
@@ -131,7 +131,7 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
     @PostMapping("/add")
-    fun addContract(@RequestBody contractDTOs: AddContractDTO) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: List<CreateContractDTO>) = docFileService.addContract(contractDTOs)
 
     @PreAuthorize(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
@@ -162,6 +162,9 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll() = docFileService.getAllContracts()
+
+    @GetMapping("get-jobs")
+    fun getJobs() = docFileService.getJobs()
 }
 
 
