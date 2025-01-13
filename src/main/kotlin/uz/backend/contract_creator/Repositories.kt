@@ -80,3 +80,10 @@ interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
 
 @Repository
 interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>
+
+@Repository
+interface JobRepository : BaseRepository<Job> {
+    fun findByHashCode(hashCode: String): Job?
+    fun findByHashCodeAndDeletedFalse(hashCode: String): Job?
+    fun findAllByCreatedByAndDeletedFalse(createdBy: Long): List<Job>
+}

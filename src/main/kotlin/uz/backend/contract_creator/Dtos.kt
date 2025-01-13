@@ -159,3 +159,17 @@ class TokenDTO(
 data class FilePathDTO(
     val path: String,
 )
+
+data class JobResponseDTO(
+    val fileType: FileTypeEnum,
+    val status: TaskStatusEnum,
+    var hashCode: String?
+){
+    companion object{
+        fun toResponse(job: Job): JobResponseDTO {
+            return job.run {
+                JobResponseDTO(fileType,status,hashCode)
+            }
+        }
+    }
+}
