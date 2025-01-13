@@ -1,9 +1,6 @@
 package uz.backend.contract_creator
 
 import jakarta.transaction.Transactional
-import org.apache.poi.xwpf.usermodel.*
-//import org.docx4j.Docx4J
-//import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
@@ -22,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
-import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -128,8 +124,8 @@ class DocFileService(
     private val templateRepository: TemplateRepository,
     private val contractRepository: ContractRepository,
     private val fieldRepository: FieldRepository,
-    private val contractFieldValueRepository: ContractFieldValueRepository,
     private val userRepository: UserRepository,
+    private val contractFieldValueRepository: ContractFieldValueRepository,
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -254,22 +250,50 @@ class DocFileService(
         }
     }
 
-    fun generateContract(generateContractDTO: GenerateContractDTO): ResponseEntity<Resource> {
+    fun generateContract(generateContractDTO: GenerateContractDTO): FilePathDTO {
         val filesToZip = mutableListOf<String>()
 
-        for (contractId in generateContractDTO.contractIds) {
-            generateContractDTO.let {
+        generateContractDTO.let {
+            val fileType = when (it.fileType.lowercase()) {
+                "pdf" -> "pdf"
+                "docx" -> "docx"
+                else -> throw InvalidFileTypeException()
+            }
+
+            for (contractId in generateContractDTO.contractIds) {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
-                    contract.run {
-                        var filePathStr = contractFilePath.substringBeforeLast(".")
-                        val fileType = when (it.fileType.lowercase()) {
-                            "pdf" -> "pdf"
-                            "docx" -> "docx"
-                            else -> throw RuntimeException("invalid file type")
+                    contract.template?.let { template ->
+                        contract.contractFilePath?.let { cPath ->
+                            Files.delete(Paths.get(cPath))
                         }
-                        filePathStr = "$filePathStr.$fileType"
-                        filesToZip.add(filePathStr)
+
+                        var fileName = template.filePath
+                            .substringAfterLast("/")
+                            .substringBeforeLast(".")
+                        fileName = fileName.substring(0, fileName.length - 36)
+                        fileName = fileName + UUID.randomUUID() + "." + fileType
+                        val contractFilePathDocx = "./files/contracts/${fileName}"
+                        Files.copy(Paths.get(template.filePath), Paths.get(contractFilePathDocx))
+
+                        val contractFieldValues = contractFieldValueRepository.findAllByContractId(contractId)
+                        val fields = contractFieldValueToMap(contractFieldValues)
+                        changeAllKeysToValues(template.id!!, contractFilePathDocx, fields)
+
+                        fileName = template.filePath
+                            .substringAfterLast("/")
+                            .substringBeforeLast(".")
+                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+                        convertWordToPdf(
+                            contractFilePathDocx,
+                            contractFilePathPdf
+                        )
+
+                        val createdFilePath = contractFilePathDocx.substringBeforeLast(".") + ".$fileType"
+                        contract.contractFilePath = createdFilePath
+                        filesToZip.add(createdFilePath)
                     }
+                } ?: run {
+                    throw RuntimeException("Contract with id $contractId not found")
                 }
             }
         }
@@ -285,17 +309,13 @@ class DocFileService(
                 zipOut.closeEntry()
             }
         }
-        val filePath = Paths.get(zipFileName)
-        val resource = UrlResource(filePath.toUri())
+        return FilePathDTO(zipFileName.substringAfterLast("/"))
+    }
 
-        if (resource.exists() && resource.isReadable) {
-            return ResponseEntity.ok().header(
-                HttpHeaders.CONTENT_DISPOSITION,
-                "attachment; filename=\"contracts.zip\""
-            ).body(resource)
-        }
-
-        return ResponseEntity.ok().build()
+    fun contractFieldValueToMap(list: List<ContractFieldValue>): Map<String, String> {
+        val map = mutableMapOf<String, String>()
+        for (it in list) map[it.field.name] = it.value
+        return map
     }
 
     @Transactional
@@ -345,15 +365,30 @@ class DocFileService(
             userOpt?.let { user ->
                 var found = false
                 for (allowedOperator in it.allowedOperators) {
-                    if(allowedOperator.operator.id == getUserId()){
+                    if (allowedOperator.operator.id == getUserId()) {
                         found = true
                         break
                     }
                 }
-                if ((getUserId() != it.createdBy) && !found && (user.role!=RoleEnum.ROLE_DIRECTOR && user.role!=RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
-                getResource(it.contractFilePath)
+                if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
+                getResource(it.contractFilePath!!)
             }
 
+        }
+    }
+
+    fun downloadContract(filePathDTO: FilePathDTO): ResponseEntity<Resource> {
+        filePathDTO.run {
+            val filePath = Paths.get(path)
+            val resource = UrlResource(filePath.toUri())
+
+            if (resource.exists() && resource.isReadable) {
+                return ResponseEntity.ok().header(
+                    HttpHeaders.CONTENT_DISPOSITION,
+                    "attachment; filename=\"contracts.zip\""
+                ).body(resource)
+            }
+            throw FileNotFoundException()
         }
     }
 

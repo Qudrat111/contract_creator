@@ -73,7 +73,7 @@ class Field(
 @Entity(name = "contracts")
 class Contract(
     @ManyToOne val template: Template? = null,
-    @Column(nullable = false) val contractFilePath: String,
+    var contractFilePath: String?,
     @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
 ) : BaseEntity()
 
