@@ -4,11 +4,16 @@ import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import com.itextpdf.kernel.pdf.PdfWriter
+
 import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
 import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.Paragraph
+import jakarta.transaction.Transactional
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.apache.poi.xwpf.usermodel.XWPFDocument
 
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
@@ -263,7 +268,6 @@ class DocFileService(
         for (contractId in downloadContractDTO.contractIds) {
             downloadContractDTO.let {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
-                    if (getUserId() != contract.createdBy) throw AccessDeniedException()
                     contract.run {
                         var filePathStr = contractFilePath.substringBeforeLast(".")
                         val fileType = when (it.fileType.lowercase()) {
@@ -303,7 +307,7 @@ class DocFileService(
     }
 
     @Transactional
-    fun addContract(createContractDTOs: List<AddContractDTO>): ContractIdsDto {
+    fun addContract(createContractDTOs: List<GenerateContractDTO>): ContractIdsDto {
         val contractIds: MutableList<Long> = mutableListOf()
         for (createContractDTO in createContractDTOs) {
             createContractDTO.run {
@@ -313,12 +317,12 @@ class DocFileService(
                         val fileType = fileName.substringAfterLast(".")
                         fileName = fileName.substringBeforeLast(".")
                         fileName = fileName.substring(0, fileName.length - 36)
-                        fileName = fileName + UUID.randomUUID() + ".docx"
+                        fileName = fileName + UUID.randomUUID() + "." + fileType
                         val contractFilePathDocx = "./files/contracts/${fileName}"
                         Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
                         changeAllKeysToValues(templateId, contractFilePathDocx, fields)
-                        val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                        val contract = contractRepository.save(Contract(it, contractFilePathDocx))
 
                         val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
                         for (fieldEntry in fields.entries) {
@@ -400,22 +404,6 @@ class DocFileService(
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
 //        val wordMLPackage = WordprocessingMLPackage.load(inputStream)
 //        Docx4J.toPDF(wordMLPackage, outputStream)
-
-
-        Paths.get("asd").absolute().name
-        XWPFDocument(inputStream).use { wordDocument ->
-            PdfWriter(outputStream).use { pdfWriter ->
-                val pdfDocument = PdfDocument(pdfWriter)
-                val document = Document(pdfDocument)
-
-                // Extract paragraphs and write them to the PDF
-                for (paragraph in wordDocument.paragraphs) {
-                    document.add(Paragraph(paragraph.text))
-                }
-
-                document.close()
-            }
-        }
     }
 
     private fun convertWordToPdf(inputFile: String, outputFileDir: String) {
