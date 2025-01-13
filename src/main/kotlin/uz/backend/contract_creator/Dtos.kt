@@ -150,3 +150,8 @@ data class FieldResponseDto(
 data class ContractIdsDto(
     val contractIds: MutableList<Long> = mutableListOf()
 )
+
+class TokenDTO(
+    val token: String,
+    val userDTO: UserDTO
+)
