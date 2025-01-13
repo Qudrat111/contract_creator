@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
+import org.springframework.data.jpa.repository.Query
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
@@ -77,6 +78,11 @@ interface ContractRepository : BaseRepository<Contract> {
 @Repository
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
     fun findAllByContractId(contractId: Long):List<ContractFieldValue>
+    @Query("""
+        select cfv from contractFieldValue  cfv
+        where cfv.contract.id = :contractId and cfv.field.id = :fieldId
+    """)
+    fun findContractFieldValue(contractId: Long,fieldId:Long):ContractFieldValue
 }
 
 @Repository

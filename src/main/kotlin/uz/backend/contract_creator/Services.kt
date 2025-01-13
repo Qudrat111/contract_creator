@@ -1,12 +1,9 @@
 package uz.backend.contract_creator
 
-import org.apache.poi.xwpf.usermodel.*
-
 import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.apache.poi.xwpf.usermodel.*
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -383,8 +380,9 @@ class DocFileService(
         updateContract.contactFieldValues.forEach { item ->
             contractRepository.findByIdAndDeletedFalse(item.contractId)?.let { contract ->
                 fieldRepository.findByName(item.fieldName)?.let { field ->
-                    contractFieldValueRepository.save(ContractFieldValue(contract, field, item.value)).let {
-                        updateContractFieldValues.add(UpdateContractDTO.toResponse(it))
+                    contractFieldValueRepository.findContractFieldValue(contract.id!!, field.id!!).let {
+                        it.value = item.value
+                        updateContractFieldValues.add(UpdateContractDTO.toResponse(contractFieldValueRepository.save(it)))
                     }
                 } ?: throw FieldNotFoundException()
             } ?: throw ContractNotFoundException()

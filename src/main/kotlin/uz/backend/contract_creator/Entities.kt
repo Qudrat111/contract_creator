@@ -77,12 +77,12 @@ class Contract(
     @OneToMany(mappedBy = "contract") val allowedOperators: List<ContractAllowedUser> = mutableListOf()
 ) : BaseEntity()
 
-@Entity
+@Entity(name = "contractFieldValue")
 class ContractFieldValue(
 
     @ManyToOne val contract: Contract,
     @ManyToOne val field: Field,
-    @Column(nullable = false) val value: String,
+    @Column(nullable = false) var value: String,
 ) : BaseEntity()
 
 @Entity
@@ -95,8 +95,8 @@ class ContractAllowedUser(
 
 @Entity
 class Job(
-    val status : TaskStatusEnum,
+    val status: TaskStatusEnum,
     val fileType: FileTypeEnum,
     val zipFilePath: String,
     @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
-): BaseEntity()
+) : BaseEntity()
