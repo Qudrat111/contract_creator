@@ -1,7 +1,5 @@
 package uz.backend.contract_creator
 
-import org.apache.poi.xwpf.usermodel.*
-
 import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
@@ -62,9 +60,9 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username) ?: throw UserNotFoundException()
 
-        val userTokenDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+        val userTokenDTO = TokenDTO(token, UserDTO.toResponse(userEntity))
 
         return userTokenDTO
     }
@@ -262,16 +260,19 @@ class DocFileService(
         }
 
         val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
-
-        createZip(generateContractDTO, fileType, zipFileName)
-
         val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
-        return Job(fileTypeEnum, zipFileName).toResponseDTO()
+
+        val job = Job(fileTypeEnum, zipFileName)
+        createZip(generateContractDTO, fileType, zipFileName, job)
+
+        return job.toResponseDTO()
     }
 
     @Async
-    fun createZip(generateContractDTO: GenerateContractDTO, fileType: String, zipFileName: String) {
+    @Synchronized
+    fun createZip(generateContractDTO: GenerateContractDTO, fileType: String, zipFileName: String, job: Job) {
         val filesToZip = mutableListOf<String>()
+
         for (contractId in generateContractDTO.contractIds) {
             contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
                 contract.template.let { template ->
@@ -319,6 +320,9 @@ class DocFileService(
                 zipOut.closeEntry()
             }
         }
+
+        job.status = TaskStatusEnum.FINISHED
+        jobRepository.save(job)
     }
 
     fun contractFieldValueToMap(list: List<ContractFieldValue>): Map<String, String> {
@@ -422,11 +426,13 @@ class DocFileService(
     }
 
     fun downloadContract(hashCode: String): ResponseEntity<Resource> {
-        jobRepository.findByHashCode(hashCode)?.let { job ->
+        jobRepository.findByHashCodeAndDeletedFalse(hashCode)?.let { job ->
             val filePath = Paths.get(job.zipFilePath)
             val resource = UrlResource(filePath.toUri())
 
             jobRepository.trash(job.id!!)
+
+            Files.delete(Paths.get(job.zipFilePath))
 
             if (resource.exists() && resource.isReadable) {
                 return ResponseEntity.ok().header(

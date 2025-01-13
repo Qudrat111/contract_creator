@@ -97,7 +97,7 @@ class ContractAllowedUser(
 class Job(
     val fileType: FileTypeEnum,
     val zipFilePath: String,
-    val status: TaskStatusEnum = TaskStatusEnum.PENDING,
+    var status: TaskStatusEnum = TaskStatusEnum.PENDING,
     @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
     val hashCode: String = UUID.randomUUID().toString(),
 ) : BaseEntity() {
