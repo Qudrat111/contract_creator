@@ -93,3 +93,11 @@ class ContractAllowedUser(
     @ManyToOne @JoinColumn(nullable = false) val contract: Contract
 
 ) : BaseEntity()
+
+@Entity
+class Job(
+    val status : TaskStatusEnum,
+    val fileType: FileTypeEnum,
+    val zipFilePath: String,
+    @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
+): BaseEntity()

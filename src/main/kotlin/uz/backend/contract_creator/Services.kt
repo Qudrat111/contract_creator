@@ -1,20 +1,10 @@
 package uz.backend.contract_creator
 
-import jakarta.transaction.Transactional
-import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfWriter
-import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Paragraph
 import jakarta.transaction.Transactional
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-import org.apache.poi.xwpf.usermodel.XWPFParagraph
-import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.apache.poi.xwpf.usermodel.XWPFDocument
-
+import org.apache.poi.xwpf.usermodel.*
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -28,19 +18,16 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
-import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.absolute
-import kotlin.io.path.name
 
 
 interface AuthService : UserDetailsService {
 
-    fun logIn(signInDTO: LogInDTO): String
+    fun logIn(signInDTO: LogInDTO): TokenDTO
     fun signIn(signInDTO: SignInDTO): UserDTO
 
 }
@@ -61,7 +48,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): String {
+    override fun logIn(signInDTO: LogInDTO): TokenDTO {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
@@ -74,7 +61,11 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        return token
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
+
+        val userDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+
+        return userDTO
     }
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
@@ -88,7 +79,7 @@ class AuthServiceImpl(
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
+        return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
 
