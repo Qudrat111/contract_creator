@@ -62,11 +62,11 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username) ?: throw UserNotFoundException()
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
 
-        val userDTO = TokenDTO(token, UserDTO.toResponse(userEntity))
+        val userTokenDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
 
-        return userDTO
+        return userTokenDTO
     }
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
@@ -79,7 +79,6 @@ class AuthServiceImpl(
 
 
     override fun loadUserByUsername(username: String): UserDetails {
-
         return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
@@ -381,7 +380,6 @@ class DocFileService(
                     } ?: throw FieldNotFoundException()
                 }
             } ?: throw TemplateNotFoundException()
-
         }
         return addContractFieldValues
     }
