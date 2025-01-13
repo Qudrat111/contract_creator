@@ -26,11 +26,11 @@ class BaseEntity(
 @Entity(name = "users")
 @Table(name = "users")
 class User(
-    @Column(nullable = false) val firstName: String,
-    @Column(nullable = false) val lastName: String,
-    @Column(nullable = false, unique = true) val userName: String,
-    @Column(nullable = false) val passWord: String,
-    @Enumerated(EnumType.STRING) var role: RoleEnum
+    @Column(length = 32, nullable = false) val firstName: String,
+    @Column(length = 32, nullable = false) val lastName: String,
+    @Column(length = 32, nullable = false, unique = true) val userName: String,
+    @Column(length = 20, nullable = false) val passWord: String,
+    @Enumerated(EnumType.STRING) @Column(length = 20) var role: RoleEnum
 
 ) : BaseEntity(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
@@ -51,7 +51,7 @@ class User(
 
 @Entity
 class Template(
-    @Column(nullable = false) val name: String,
+    @Column(length = 50, nullable = false) val name: String,
     @Column(nullable = false) var filePath: String,
     @ManyToMany var fields: MutableList<Field>,
 ) : BaseEntity() {
@@ -62,8 +62,8 @@ class Template(
 
 @Entity
 class Field(
-    @Column(nullable = false, unique = true) var name: String,
-    @Enumerated(EnumType.STRING) var type: TypeEnum
+    @Column(length = 45, nullable = false, unique = true) var name: String,
+    @Enumerated(EnumType.STRING)@Column(length = 20) var type: TypeEnum
 ) : BaseEntity() {
     fun toResponseDto(): FieldResponseDto {
         return FieldResponseDto(id!!, name, type)
