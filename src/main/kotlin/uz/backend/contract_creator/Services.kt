@@ -75,8 +75,7 @@ class AuthServiceImpl(
 
 
     override fun loadUserByUsername(username: String): UserDetails {
-
-        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
+        return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
 
