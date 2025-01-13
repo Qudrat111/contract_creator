@@ -85,4 +85,5 @@ interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>
 interface JobRepository : BaseRepository<Job> {
     fun findByHashCode(hashCode: String): Job?
     fun findByHashCodeAndDeletedFalse(hashCode: String): Job?
+    fun findAllByCreatedByAndDeletedFalse(createdBy: Long): List<Job>
 }

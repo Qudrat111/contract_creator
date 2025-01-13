@@ -564,6 +564,17 @@ class DocFileService(
         }
         templateRepository.save(template)
     }
+
+    fun getJobs(): List<JobResponseDTO>{
+        val userId = getUserId()
+        val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
+        return jobs.map {
+            val dto = it.toResponseDTO()
+            if(dto.status == TaskStatusEnum.FINISHED)
+                dto.hashCode = it.hashCode
+            dto
+        }
+    }
 }
 
 @Service
