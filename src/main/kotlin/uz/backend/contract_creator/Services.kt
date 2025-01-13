@@ -4,6 +4,15 @@ import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
+
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Paragraph
+import jakarta.transaction.Transactional
+import org.apache.poi.xwpf.usermodel.XWPFDocument
+import org.apache.poi.xwpf.usermodel.XWPFParagraph
+import org.apache.poi.xwpf.usermodel.XWPFTable
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 
 import org.springframework.core.io.Resource
@@ -25,6 +34,8 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.io.path.absolute
+import kotlin.io.path.name
 
 
 interface AuthService : UserDetailsService {
@@ -296,22 +307,22 @@ class DocFileService(
     }
 
     @Transactional
-    fun addContract(createContractDTOs: List<generateContractDTO>): ContractIdsDto {
+    fun addContract(createContractDTOs: List<GenerateContractDTO>): ContractIdsDto {
         val contractIds: MutableList<Long> = mutableListOf()
         for (createContractDTO in createContractDTOs) {
             createContractDTO.run {
                 templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                     template.let { it ->
                         var fileName = it.filePath.substringAfterLast("/")
-//                        val fileType = fileName.substringAfterLast(".")
+                        val fileType = fileName.substringAfterLast(".")
                         fileName = fileName.substringBeforeLast(".")
                         fileName = fileName.substring(0, fileName.length - 36)
-                        fileName = fileName + UUID.randomUUID() + ".docx"
+                        fileName = fileName + UUID.randomUUID() + "." + fileType
                         val contractFilePathDocx = "./files/contracts/${fileName}"
                         Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
                         changeAllKeysToValues(templateId, contractFilePathDocx, fields)
-                        val contract = contractRepository.save(Contract(it, clientPassport, contractFilePathDocx))
+                        val contract = contractRepository.save(Contract(it, contractFilePathDocx))
 
                         val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
                         for (fieldEntry in fields.entries) {
@@ -337,13 +348,25 @@ class DocFileService(
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
-            getResource(it.contractFilePath)
+            val userId = getUserId()
+            val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
+            userOpt?.let { user ->
+                var found = false
+                for (allowedOperator in it.allowedOperators) {
+                    if(allowedOperator.operator.id == getUserId()){
+                        found = true
+                        break
+                    }
+                }
+                if ((getUserId() != it.createdBy) && !found && (user.role!=RoleEnum.ROLE_DIRECTOR && user.role!=RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
+                getResource(it.contractFilePath)
+            }
 
         }
     }
 
     private fun getResource(path: String): ResponseEntity<Resource> {
-        val filePath = Paths.get("attaches/${path}").normalize()
+        val filePath = Paths.get(path).normalize()
         val resource: Resource?
         resource = UrlResource(filePath.toUri())
         if (!resource.exists()) {
@@ -360,9 +383,7 @@ class DocFileService(
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
         val contracts = mutableListOf<ContractDto>()
-        val optional = userRepository.findById(id)
-        if (optional.isEmpty) throw UserNotFoundException()
-        contractRepository.findAllByCreatedBy(optional.get()).let {
+        contractRepository.findAllByCreatedBy(id).let {
             it.forEach { item ->
                 contracts.add(ContractDto.toDTO(item))
             }
@@ -390,7 +411,7 @@ class DocFileService(
             "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
             "--headless",
             "--convert-to", "pdf",
-            "--outdir", outputFileDir,
+            "--outdir", outputFileDir.substringBeforeLast("/"),
             inputFile
         )
         val process = processBuilder.start()

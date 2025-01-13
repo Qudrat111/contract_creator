@@ -70,7 +70,7 @@ interface FieldRepository : BaseRepository<Field> {
 interface ContractRepository : BaseRepository<Contract> {
     fun findByClientPassportAndDeletedFalse(clientPassport: String): MutableList<Contract>
 
-    fun findAllByCreatedBy(user: User):List<Contract>
+    fun findAllByCreatedBy(createdBy: Long):List<Contract>
 
 }
 @Repository

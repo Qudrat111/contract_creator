@@ -149,7 +149,7 @@ class UserController(
 ) {
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
-    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService
+    fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService.changeRole(userId,role)
 
     @GetMapping
     @PreAuthorize(
