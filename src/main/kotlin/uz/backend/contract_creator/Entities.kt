@@ -29,8 +29,8 @@ class User(
     @Column(length = 32, nullable = false) val firstName: String,
     @Column(length = 32, nullable = false) val lastName: String,
     @Column(length = 32, nullable = false, unique = true) val userName: String,
-    @Column(length = 20, nullable = false) val passWord: String,
-    @Enumerated(EnumType.STRING) @Column(length = 20) var role: RoleEnum
+    @Column(nullable = false) val passWord: String,
+    @Enumerated(EnumType.STRING) var role: RoleEnum
 
 ) : BaseEntity(), UserDetails {
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {

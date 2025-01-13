@@ -131,7 +131,7 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
     @PostMapping("/add")
-    fun addContract(@RequestBody contractDTOs: AddContractDTO) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: List<CreateContractDTO>) = docFileService.addContract(contractDTOs)
 
     @PreAuthorize(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
