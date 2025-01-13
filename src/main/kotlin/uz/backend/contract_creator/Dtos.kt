@@ -70,13 +70,8 @@ data class FieldUpdateDTO(
     val type: String?
 )
 
-data class DownloadContractDTO(
-    @NotNull val contractIds: List<Long>,
-)
-
 data class GenerateContractDTO(
-    @NotNull val templateId: Long,
-    @NotNull val fields: Map<String, String>,
+    @NotNull val contractIds: List<Long>,
     @NotNull val fileType: String
 )
 data class AddContractDTO(
@@ -89,7 +84,7 @@ data class UpdateContractDTO(
 )
 
 data class TemplateDto(
-    val id: Long ?,
+    val id: Long?,
     @NotNull val name: String,
     @NotNull val keys: List<FieldDTO>
 ) {
@@ -99,7 +94,7 @@ data class TemplateDto(
             template.fields.forEach { fieldDTO ->
                 fieldDTos.add(FieldDTO.toDTO(fieldDTO))
             }
-            return TemplateDto(template.id,template.name, fieldDTos)
+            return TemplateDto(template.id, template.name, fieldDTos)
         }
     }
 }
@@ -107,11 +102,10 @@ data class TemplateDto(
 data class ContractDto(
     val contractId: Long,
     val templateName: String,
-    val clientPassport: String,
 ) {
     companion object {
         fun toDTO(it: Contract): ContractDto {
-            return ContractDto(it.id!!, it.template?.name!!, it.clientPassport)
+            return ContractDto(it.id!!, it.template?.name!!)
         }
     }
 }

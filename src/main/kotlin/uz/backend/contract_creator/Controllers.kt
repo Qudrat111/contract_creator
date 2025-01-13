@@ -121,10 +121,10 @@ class ContractController(
     fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
-    fun addContract(@RequestBody contractDTOs: List<generateContractDTO>) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: List<GenerateContractDTO>) = docFileService.addContract(contractDTOs)
 
-    @PostMapping("/download")
-    fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)
+    @PostMapping("/generate")
+    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = docFileService.generateContract(generateContractDTO)
 
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)

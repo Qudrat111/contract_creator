@@ -5,15 +5,9 @@ import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.kernel.pdf.PdfWriter
-import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Paragraph
-import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.apache.poi.xwpf.usermodel.XWPFDocument
 
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
@@ -34,8 +28,6 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.absolute
-import kotlin.io.path.name
 
 
 interface AuthService : UserDetailsService {
@@ -262,11 +254,11 @@ class DocFileService(
         }
     }
 
-    fun downloadContract(downloadContractDTO: DownloadContractDTO): ResponseEntity<Resource> {
+    fun generateContract(generateContractDTO: GenerateContractDTO): ResponseEntity<Resource> {
         val filesToZip = mutableListOf<String>()
 
-        for (contractId in downloadContractDTO.contractIds) {
-            downloadContractDTO.let {
+        for (contractId in generateContractDTO.contractIds) {
+            generateContractDTO.let {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
                     contract.run {
                         var filePathStr = contractFilePath.substringBeforeLast(".")
@@ -309,40 +301,40 @@ class DocFileService(
     @Transactional
     fun addContract(createContractDTOs: List<GenerateContractDTO>): ContractIdsDto {
         val contractIds: MutableList<Long> = mutableListOf()
-        for (createContractDTO in createContractDTOs) {
-            createContractDTO.run {
-                templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-                    template.let { it ->
-                        var fileName = it.filePath.substringAfterLast("/")
-                        val fileType = fileName.substringAfterLast(".")
-                        fileName = fileName.substringBeforeLast(".")
-                        fileName = fileName.substring(0, fileName.length - 36)
-                        fileName = fileName + UUID.randomUUID() + "." + fileType
-                        val contractFilePathDocx = "./files/contracts/${fileName}"
-                        Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
-
-                        changeAllKeysToValues(templateId, contractFilePathDocx, fields)
-                        val contract = contractRepository.save(Contract(it, contractFilePathDocx))
-
-                        val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
-                        for (fieldEntry in fields.entries) {
-                            fieldRepository.findByName(fieldEntry.key)?.let {
-                                contractFieldValueMap.add(ContractFieldValue(contract, it, fieldEntry.value))
-                            }
-                        }
-                        contractFieldValueRepository.saveAll(contractFieldValueMap)
-
-                        fileName = fileName.substringBeforeLast(".")
-                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                        convertWordToPdf(
-                            contractFilePathDocx,
-                            contractFilePathPdf
-                        )
-                        contractIds.add(contract.id!!)
-                    }
-                } ?: throw TemplateNotFoundException()
-            }
-        }
+//        for (createContractDTO in createContractDTOs) {
+//            createContractDTO.run {
+//                templateRepository.findByIdAndDeletedFalse(contractIds)?.let { template ->
+//                    template.let { it ->
+//                        var fileName = it.filePath.substringAfterLast("/")
+//                        val fileType = fileName.substringAfterLast(".")
+//                        fileName = fileName.substringBeforeLast(".")
+//                        fileName = fileName.substring(0, fileName.length - 36)
+//                        fileName = fileName + UUID.randomUUID() + "." + fileType
+//                        val contractFilePathDocx = "./files/contracts/${fileName}"
+//                        Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
+//
+//                        changeAllKeysToValues(contractIds, contractFilePathDocx, fields)
+//                        val contract = contractRepository.save(Contract(it, contractFilePathDocx))
+//
+//                        val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
+//                        for (fieldEntry in fields.entries) {
+//                            fieldRepository.findByName(fieldEntry.key)?.let {
+//                                contractFieldValueMap.add(ContractFieldValue(contract, it, fieldEntry.value))
+//                            }
+//                        }
+//                        contractFieldValueRepository.saveAll(contractFieldValueMap)
+//
+//                        fileName = fileName.substringBeforeLast(".")
+//                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
+//                        convertWordToPdf(
+//                            contractFilePathDocx,
+//                            contractFilePathPdf
+//                        )
+//                        contractIds.add(contract.id!!)
+//                    }
+//                } ?: throw TemplateNotFoundException()
+//            }
+//        }
         return ContractIdsDto(contractIds)
     }
 
