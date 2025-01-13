@@ -116,9 +116,10 @@ class TemplateController(private val docFileService: DocFileService) {
 @RequestMapping("/contract")
 class ContractController(
     private val docFileService: DocFileService,
+    private val fileService: FieldServiceImpl
 ) {
     @PostMapping("/generate")
-    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = docFileService.generateContract(generateContractDTO)
+    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = fileService.generateContract(generateContractDTO)
 
     @GetMapping("/download/{hashCode}")
     fun downloadContract(@PathVariable hashCode: String) = docFileService.downloadContract(hashCode)

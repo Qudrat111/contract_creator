@@ -3,6 +3,7 @@ package uz.backend.contract_creator
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.springframework.context.annotation.Lazy
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -127,7 +128,6 @@ class DocFileService(
     private val userRepository: UserRepository,
     private val contractFieldValueRepository: ContractFieldValueRepository,
     private val jobRepository: JobRepository,
-    private val fieldService: FieldService,
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
@@ -252,21 +252,7 @@ class DocFileService(
         }
     }
 
-    fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
-        val fileType = when (generateContractDTO.fileType.lowercase()) {
-            "pdf" -> "pdf"
-            "docx" -> "docx"
-            else -> throw InvalidFileTypeException()
-        }
 
-        val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
-        val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
-
-        val job = Job(fileTypeEnum, zipFileName)
-        createZip(generateContractDTO, fileType, zipFileName, job)
-
-        return job.toResponseDTO()
-    }
 
     @Async
     @Synchronized
@@ -275,10 +261,11 @@ class DocFileService(
 
         for (contractId in generateContractDTO.contractIds) {
             contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
+                job.contracts.add(contract)
                 contract.template.let { template ->
-                    contract.contractFilePath?.let { cPath ->
-                        Files.delete(Paths.get(cPath))
-                    }
+//                    contract.contractFilePath?.let { cPath ->
+//                        Files.delete(Paths.get(cPath))
+//                    }
 
                     var fileName = template.filePath
                         .substringAfterLast("/")
@@ -305,10 +292,13 @@ class DocFileService(
                     contract.contractFilePath = createdFilePath
                     filesToZip.add(createdFilePath)
                 }
-            } ?: run {
+            }
+                ?: run {
                 throw RuntimeException("Contract with id $contractId not found")
             }
         }
+
+        jobRepository.save(job)
 
         ZipOutputStream(FileOutputStream(zipFileName)).use { zipOut ->
             filesToZip.forEach { fileName ->
@@ -413,13 +403,13 @@ class DocFileService(
 
             jobRepository.trash(job.id!!)
 
-            Files.delete(Paths.get(job.zipFilePath))
 
             if (resource.exists() && resource.isReadable) {
                 return ResponseEntity.ok().header(
                     HttpHeaders.CONTENT_DISPOSITION,
                     "attachment; filename=\"contracts.zip\""
                 ).body(resource)
+//            Files.delete(Paths.get(job.zipFilePath))
             }
         }
         throw FileNotFoundException()
@@ -558,11 +548,30 @@ class DocFileService(
     }
 }
 
+
 @Service
 class FieldServiceImpl(
     private val fieldRepository: FieldRepository,
     private val templateRepository: TemplateRepository,
+    private val docFileService: DocFileService
 ) : FieldService {
+
+    fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
+        val fileType = when (generateContractDTO.fileType.lowercase()) {
+            "pdf" -> "pdf"
+            "docx" -> "docx"
+            else -> throw InvalidFileTypeException()
+        }
+
+        val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
+        val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
+
+        val job = Job(fileTypeEnum, zipFileName, )
+        docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
+
+        return job.toResponseDTO()
+    }
+
     override fun createField(dto: FieldDTO) {
         dto.run {
             if (fieldRepository.existsByName(name)) throw ExistsFieldException()
