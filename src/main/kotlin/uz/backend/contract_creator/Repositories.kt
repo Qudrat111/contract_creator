@@ -74,7 +74,9 @@ interface ContractRepository : BaseRepository<Contract> {
 }
 
 @Repository
-interface ContractFieldValueRepository : BaseRepository<ContractFieldValue>
+interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
+    fun findAllByContractId(contractId: Long):List<ContractFieldValue>
+}
 
 @Repository
 interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>

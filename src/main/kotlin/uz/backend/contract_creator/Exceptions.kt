@@ -56,5 +56,8 @@ class ContractNotFoundException:BaseExceptionHandler(){
 
 class AccessDeniedException:BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.ACCESS_DENIED
+}
 
+class InvalidFileTypeException():BaseExceptionHandler(){
+    override fun errorCode() = ErrorCodes.INVALID_FILE_TYPE
 }

@@ -155,3 +155,7 @@ class TokenDTO(
     val token: String,
     val userDTO: UserDTO
 )
+
+data class FilePathDTO(
+    val path: String,
+)

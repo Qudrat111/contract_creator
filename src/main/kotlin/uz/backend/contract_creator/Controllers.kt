@@ -117,6 +117,12 @@ class TemplateController(private val docFileService: DocFileService) {
 class ContractController(
     private val docFileService: DocFileService,
 ) {
+    @PostMapping("/generate")
+    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = docFileService.generateContract(generateContractDTO)
+
+    @GetMapping("/download")
+    fun downloadContract(@RequestBody filePathDTO: FilePathDTO) = docFileService.downloadContract(filePathDTO)
+
     @GetMapping("/{id}")
     fun get(@PathVariable("id") id: Long) = docFileService.getContract(id)
 
@@ -146,9 +152,6 @@ class ContractController(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
-    @PostMapping("/generate")
-    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) =
-        docFileService.generateContract(generateContractDTO)
 
     @GetMapping("/getByOperatorId")
     fun getContractsByOperatorId() = docFileService.getAllOperatorContracts(getUserId()!!)
