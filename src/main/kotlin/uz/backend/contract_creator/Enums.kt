@@ -24,3 +24,14 @@ enum class ErrorCodes(val code: Int){
     CONTRACT_NOT_FOUND(106),
     ACCESS_DENIED(107)
 }
+
+enum class TaskStatusEnum {
+    PENDING,
+    FAILED,
+    FINISHED
+}
+
+enum class FileTypeEnum{
+    PDF,
+    DOCX
+}

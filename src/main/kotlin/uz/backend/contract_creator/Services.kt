@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.apache.poi.xwpf.usermodel.*
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -29,7 +30,7 @@ import java.util.zip.ZipOutputStream
 
 interface AuthService : UserDetailsService {
 
-    fun logIn(signInDTO: LogInDTO): String
+    fun logIn(signInDTO: LogInDTO): TokenDTO
     fun signIn(signInDTO: SignInDTO): UserDTO
 
 }
@@ -49,7 +50,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): String {
+    override fun logIn(signInDTO: LogInDTO): TokenDTO {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
@@ -62,7 +63,11 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        return token
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
+
+        val userDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+
+        return userDTO
     }
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
@@ -76,7 +81,7 @@ class AuthServiceImpl(
 
     override fun loadUserByUsername(username: String): UserDetails {
 
-        return userRepository.findByUserName(username) ?: throw UserNotFoundException()
+        return userRepository.findByUserNameAndDeletedFalse(username) ?: throw UserNotFoundException()
     }
 }
 
