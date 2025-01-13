@@ -331,49 +331,10 @@ class DocFileService(
         return map
     }
 
-    @Transactional
-    fun addContract(createContractDTOs: List<GenerateContractDTO>): ContractIdsDto {
-        val contractIds: MutableList<Long> = mutableListOf()
-//        for (createContractDTO in createContractDTOs) {
-//            createContractDTO.run {
-//                templateRepository.findByIdAndDeletedFalse(contractIds)?.let { template ->
-//                    template.let { it ->
-//                        var fileName = it.filePath.substringAfterLast("/")
-//                        val fileType = fileName.substringAfterLast(".")
-//                        fileName = fileName.substringBeforeLast(".")
-//                        fileName = fileName.substring(0, fileName.length - 36)
-//                        fileName = fileName + UUID.randomUUID() + "." + fileType
-//                        val contractFilePathDocx = "./files/contracts/${fileName}"
-//                        Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
-//
-//                        changeAllKeysToValues(contractIds, contractFilePathDocx, fields)
-//                        val contract = contractRepository.save(Contract(it, contractFilePathDocx))
-//
-//                        val contractFieldValueMap: MutableList<ContractFieldValue> = mutableListOf()
-//                        for (fieldEntry in fields.entries) {
-//                            fieldRepository.findByName(fieldEntry.key)?.let {
-//                                contractFieldValueMap.add(ContractFieldValue(contract, it, fieldEntry.value))
-//                            }
-//                        }
-//                        contractFieldValueRepository.saveAll(contractFieldValueMap)
-//
-//                        fileName = fileName.substringBeforeLast(".")
-//                        val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-//                        convertWordToPdf(
-//                            contractFilePathDocx,
-//                            contractFilePathPdf
-//                        )
-//                        contractIds.add(contract.id!!)
-//                    }
-//                } ?: throw TemplateNotFoundException()
-//            }
-//        }
-        return ContractIdsDto(contractIds)
-    }
 
-    fun addContract(addContract: AddContractDTO): List<ContractFieldValueDto> {
+    fun addContract(addContract: List<CreateContractDTO>): List<ContractFieldValueDto> {
         val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
-        addContract.contract.forEach { item ->
+        addContract.forEach { item ->
             templateRepository.findByIdAndDeletedFalse(item.templateId)?.let { template ->
                 contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
                     fieldRepository.findByName(item.fieldName)?.let { field ->
