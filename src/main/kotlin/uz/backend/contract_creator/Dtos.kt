@@ -79,6 +79,14 @@ data class GenerateContractDTO(
     @NotNull val fields: Map<String, String>,
     @NotNull val fileType: String
 )
+data class AddContractDTO(
+    @NotNull val templateId: Long,
+    @NotNull val fields: Map<String, String>,
+)
+data class UpdateContractDTO(
+    @NotNull val contractId: Long,
+    @NotNull val fields: Map<String, String>,
+)
 
 data class TemplateDto(
     val id: Long ?,
