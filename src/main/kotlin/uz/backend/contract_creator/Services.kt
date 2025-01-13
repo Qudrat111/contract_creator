@@ -62,9 +62,9 @@ class AuthServiceImpl(
 
         val token: String = jwtProvider.generateToken(signInDTO.username)
 
-        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username)?:throw UserNotFoundException()
+        val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username) ?: throw UserNotFoundException()
 
-        val userDTO = TokenDTO(token,UserDTO.toResponse(userEntity))
+        val userDTO = TokenDTO(token, UserDTO.toResponse(userEntity))
 
         return userDTO
     }
@@ -414,7 +414,6 @@ class DocFileService(
                 if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
                 it.contractFilePath?.let { path -> getResource(path) }
             }
-
         }
     }
 
@@ -430,6 +429,8 @@ class DocFileService(
                 ).body(resource)
             }
             throw FileNotFoundException()
+        }
+    }
 
 
     private fun getResource(path: String): ResponseEntity<Resource> {
@@ -536,7 +537,8 @@ class DocFileService(
 
     fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
-        val filename = file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
+        val filename =
+            file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
         val filePath = "./files/templates/$filename"
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, Paths.get(filePath))
@@ -576,7 +578,8 @@ class FieldServiceImpl(
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
         val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
         val template =
-            templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()
+            templateRepository.findByIdAndDeletedFalse(updateDto.templateId)
+                ?: throw TemplateNotFoundException()
         val fields = template.fields
 
         if (!fields.contains(field)) {
