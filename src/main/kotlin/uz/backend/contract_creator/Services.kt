@@ -1,7 +1,5 @@
 package uz.backend.contract_creator
 
-import org.apache.poi.xwpf.usermodel.*
-
 import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
@@ -557,6 +555,17 @@ class DocFileService(
             it.filePath = filePath
         }
         templateRepository.save(template)
+    }
+
+    fun getJobs(): List<JobResponseDTO>{
+        val userId = getUserId()
+        val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
+        return jobs.map {
+            val dto = it.toResponseDTO()
+            if(dto.status == TaskStatusEnum.FINISHED)
+                dto.hashCode = it.hashCode
+            dto
+        }
     }
 }
 

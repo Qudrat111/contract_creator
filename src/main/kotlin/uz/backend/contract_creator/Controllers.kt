@@ -162,6 +162,9 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll() = docFileService.getAllContracts()
+
+    @GetMapping("get-jobs")
+    fun getJobs() = docFileService.getJobs()
 }
 
 
