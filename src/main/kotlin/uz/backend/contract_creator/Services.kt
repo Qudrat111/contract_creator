@@ -417,11 +417,11 @@ class DocFileService(
 
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
-        val keys = mutableListOf<String>()
+        val keys = mutableSetOf<String>()
         for (table in document.tables)
             keys.addAll(getKeys(table))
         keys.addAll(getKeys(document.paragraphs))
-        return keys
+        return keys.toMutableList()
     }
 
     private fun getKeys(table: XWPFTable): MutableList<String> {
