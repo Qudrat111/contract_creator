@@ -80,3 +80,6 @@ interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
 
 @Repository
 interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>
+
+@Repository
+interface JobRepository : BaseRepository<Job> {}

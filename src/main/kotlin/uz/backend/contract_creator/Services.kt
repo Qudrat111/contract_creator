@@ -128,7 +128,7 @@ class DocFileService(
     private val contractRepository: ContractRepository,
     private val fieldRepository: FieldRepository,
     private val userRepository: UserRepository,
-    private val contractFieldValueRepository: ContractFieldValueRepository,
+    private val contractFieldValueRepository: ContractFieldValueRepository, private val jobRepository: JobRepository,
 ) {
     private fun readDocFile(filePath: String): XWPFDocument {
         FileInputStream(filePath).use { inputStream ->
