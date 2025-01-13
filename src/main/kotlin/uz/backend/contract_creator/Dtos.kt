@@ -90,12 +90,8 @@ data class AddContractDTO(
 
 data class CreateContractDTO(
     val templateId: Long,
-    val contractFilePath: String,
-) {
-    fun toEntity(template: Template):Contract{
-        return Contract(template,contractFilePath, mutableListOf())
-    }
-}
+    val fields: MutableMap<String,String>
+)
 
 data class ContractFieldValueDto(
     val contractId: Long,
