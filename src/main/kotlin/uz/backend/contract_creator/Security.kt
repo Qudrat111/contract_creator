@@ -140,8 +140,8 @@ class SecurityConfig(
             Customizer { auth ->
                 auth
                     .requestMatchers("/auth/**").permitAll()
-//                        .requestMatchers("/field/**").permitAll()
-                    .anyRequest().authenticated()
+//                    .anyRequest().authenticated()
+                    .anyRequest().permitAll()
             }
         )
         httpSecurity

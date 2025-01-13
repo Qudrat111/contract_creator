@@ -108,7 +108,8 @@ class TemplateController(private val docFileService: DocFileService) {
     fun getAll() = docFileService.getAllTemplates()
 
     @PutMapping("update-template/{id}")
-    fun update(@RequestParam("file") file: MultipartFile, @PathVariable id:Long) =docFileService.upDateTemplate(id, file)
+    fun update(@RequestParam("file") file: MultipartFile, @PathVariable id: Long) =
+        docFileService.upDateTemplate(id, file)
 }
 
 @RestController
@@ -120,7 +121,7 @@ class ContractController(
     fun getByClint(@PathVariable clientPassport: String) = docFileService.getContractsByClint(clientPassport)
 
     @GetMapping("/add")
-    fun addContract(@RequestBody contractDTOs: List<AddContractDTO>) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: List<generateContractDTO>) = docFileService.addContract(contractDTOs)
 
     @PostMapping("/download")
     fun downloadContract(@RequestBody downloadDto: DownloadContractDTO) = docFileService.downloadContract(downloadDto)

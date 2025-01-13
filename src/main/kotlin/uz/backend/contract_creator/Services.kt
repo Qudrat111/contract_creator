@@ -5,10 +5,6 @@ import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 import org.apache.poi.xwpf.usermodel.XWPFDocument
-import com.itextpdf.kernel.pdf.PdfWriter
-import com.itextpdf.kernel.pdf.PdfDocument
-import com.itextpdf.layout.Document
-import com.itextpdf.layout.element.Paragraph
 
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
@@ -29,8 +25,6 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.io.path.absolute
-import kotlin.io.path.name
 
 
 interface AuthService : UserDetailsService {
@@ -275,7 +269,6 @@ class DocFileService(
                     }
                 }
             }
-            throw RuntimeException("something went wrong")
         }
         val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
 
@@ -303,17 +296,17 @@ class DocFileService(
     }
 
     @Transactional
-    fun addContract(createContractDTOs: List<AddContractDTO>): ContractIdsDto {
+    fun addContract(createContractDTOs: List<generateContractDTO>): ContractIdsDto {
         val contractIds: MutableList<Long> = mutableListOf()
         for (createContractDTO in createContractDTOs) {
             createContractDTO.run {
                 templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
                     template.let { it ->
                         var fileName = it.filePath.substringAfterLast("/")
-                        val fileType = fileName.substringAfterLast(".")
+//                        val fileType = fileName.substringAfterLast(".")
                         fileName = fileName.substringBeforeLast(".")
                         fileName = fileName.substring(0, fileName.length - 36)
-                        fileName = fileName + UUID.randomUUID() + "." + fileType
+                        fileName = fileName + UUID.randomUUID() + ".docx"
                         val contractFilePathDocx = "./files/contracts/${fileName}"
                         Files.copy(Paths.get(it.filePath), Paths.get(contractFilePathDocx))
 
@@ -390,22 +383,6 @@ class DocFileService(
     private fun convertWordToPdf(inputStream: InputStream, outputStream: OutputStream) {
 //        val wordMLPackage = WordprocessingMLPackage.load(inputStream)
 //        Docx4J.toPDF(wordMLPackage, outputStream)
-
-
-        Paths.get("asd").absolute().name
-        XWPFDocument(inputStream).use { wordDocument ->
-            PdfWriter(outputStream).use { pdfWriter ->
-                val pdfDocument = PdfDocument(pdfWriter)
-                val document = Document(pdfDocument)
-
-                // Extract paragraphs and write them to the PDF
-                for (paragraph in wordDocument.paragraphs) {
-                    document.add(Paragraph(paragraph.text))
-                }
-
-                document.close()
-            }
-        }
     }
 
     private fun convertWordToPdf(inputFile: String, outputFileDir: String) {
@@ -460,8 +437,8 @@ class DocFileService(
                 val lastIndex = newText.indexOf("##", firstIndex + 2)
                 if (lastIndex == -1) break
 
-                val key = text.substring(firstIndex+2, lastIndex)
-                newText = text.substring(firstIndex)+key+text.substring(lastIndex)
+                val key = newText.substring(firstIndex + 2, lastIndex)
+                newText = newText.substring(lastIndex + 2)
                 keys.add(key)
             }
         }
@@ -472,7 +449,7 @@ class DocFileService(
         return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
     }
 
-    fun upDateTemplate(id: Long, file: MultipartFile){
+    fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
         val filename = file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
         val filePath = "./files/templates/$filename"
@@ -483,8 +460,8 @@ class DocFileService(
         val fields = getFieldsByKeys(keys)
 
         template.let {
-            it.fields= fields.toMutableList()
-            it.filePath=filePath
+            it.fields = fields.toMutableList()
+            it.filePath = filePath
         }
         templateRepository.save(template)
     }

@@ -72,13 +72,12 @@ data class FieldUpdateDTO(
 
 data class DownloadContractDTO(
     @NotNull val contractIds: List<Long>,
-    @NotNull val fileType: String
 )
 
-data class AddContractDTO(
+data class GenerateContractDTO(
     @NotNull val templateId: Long,
     @NotNull val fields: Map<String, String>,
-    @NotNull val clientPassport: String
+    @NotNull val fileType: String
 )
 
 data class TemplateDto(
