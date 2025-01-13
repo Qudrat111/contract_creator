@@ -1,14 +1,12 @@
 package uz.backend.contract_creator
 
-import jakarta.transaction.Transactional
-import org.apache.poi.xwpf.usermodel.*
 //import org.docx4j.Docx4J
 //import org.docx4j.openpackaging.packages.WordprocessingMLPackage
 
+import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -22,7 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.io.*
-import java.io.FileNotFoundException
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
@@ -43,7 +40,6 @@ interface FieldService {
     fun getAllField(): List<FieldGetDto>
     fun updateField(id: Long, updateDto: FieldUpdateDTO)
     fun deleteField(id: Long)
-
 }
 
 @Service
@@ -261,7 +257,7 @@ class DocFileService(
             generateContractDTO.let {
                 contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
                     contract.run {
-                        var filePathStr = contractFilePath.substringBeforeLast(".")
+                        var filePathStr = contractFilePath?.substringBeforeLast(".")
                         val fileType = when (it.fileType.lowercase()) {
                             "pdf" -> "pdf"
                             "docx" -> "docx"
@@ -338,6 +334,43 @@ class DocFileService(
         return ContractIdsDto(contractIds)
     }
 
+    fun addContract(addContract: AddContractDTO): List<ContractFieldValueDto> {
+        val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
+        addContract.contract.forEach { item ->
+            templateRepository.findByIdAndDeletedFalse(item.templateId)?.let { template ->
+                contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
+                    fieldRepository.findByName(item.fieldName)?.let { field ->
+                        contractFieldValueRepository.saveAndRefresh(ContractFieldValue(contract, field, item.value))
+                            .let {
+                                addContractFieldValues.add(AddContractDTO.toResponse(it))
+                            }
+                    } ?: throw FieldNotFoundException()
+                }
+            } ?: throw TemplateNotFoundException()
+
+        }
+        return addContractFieldValues
+    }
+
+    fun updateContract(updateContract: UpdateContractDTO): List<ContractFieldValueDto> {
+        val updateContractFieldValues = mutableListOf<ContractFieldValueDto>()
+        updateContract.contactFieldValues.forEach { item ->
+            contractRepository.findByIdAndDeletedFalse(item.contractId)?.let { contract ->
+                fieldRepository.findByName(item.fieldName)?.let { field ->
+                    contractFieldValueRepository.save(ContractFieldValue(contract, field, item.value)).let {
+                        updateContractFieldValues.add(UpdateContractDTO.toResponse(it))
+                    }
+                } ?: throw FieldNotFoundException()
+            } ?: throw ContractNotFoundException()
+        }
+        return updateContractFieldValues
+    }
+
+    fun deleteContract(id: Long) {
+        contractRepository.findByIdAndDeletedFalse(id)?.let { contractRepository.trash(id) }
+            ?: throw ContractNotFoundException()
+    }
+
     fun getContract(id: Long): ResponseEntity<Resource>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val userId = getUserId()
@@ -345,13 +378,13 @@ class DocFileService(
             userOpt?.let { user ->
                 var found = false
                 for (allowedOperator in it.allowedOperators) {
-                    if(allowedOperator.operator.id == getUserId()){
+                    if (allowedOperator.operator.id == getUserId()) {
                         found = true
                         break
                     }
                 }
-                if ((getUserId() != it.createdBy) && !found && (user.role!=RoleEnum.ROLE_DIRECTOR && user.role!=RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
-                getResource(it.contractFilePath)
+                if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
+                it.contractFilePath?.let { path -> getResource(path) }
             }
 
         }
@@ -362,7 +395,7 @@ class DocFileService(
         val resource: Resource?
         resource = UrlResource(filePath.toUri())
         if (!resource.exists()) {
-            throw FileNotFoundException("File not found: $path")
+            throw uz.backend.contract_creator.FileNotFoundException()
         }
         var contentType = Files.probeContentType(filePath)
         if (contentType == null) {
@@ -458,9 +491,6 @@ class DocFileService(
         return keys
     }
 
-    fun getContractsByClint(clientPassport: String): List<ContractDto> {
-        return contractRepository.findByClientPassportAndDeletedFalse(clientPassport).map { ContractDto.toDTO(it) }
-    }
 
     fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
