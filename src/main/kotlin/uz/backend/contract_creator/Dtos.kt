@@ -159,3 +159,9 @@ class TokenDTO(
 data class FilePathDTO(
     val path: String,
 )
+
+data class JobResponseDTO(
+    val fileType: FileTypeEnum,
+    val status: TaskStatusEnum,
+    val hashCode: String
+)
