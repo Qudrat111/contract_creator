@@ -3,6 +3,7 @@ package uz.backend.contract_creator
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.springframework.context.annotation.Lazy
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -268,7 +269,7 @@ class DocFileService(
                     fileName = fileName.substring(0, fileName.length - 36)
                     fileName = fileName + UUID.randomUUID() + "." + fileType
                     val contractFilePathDocx = "./files/contracts/${fileName}"
-                    if (Files.exists(Paths.get(contractFilePathDocx)))
+                    if(Files.exists(Paths.get(contractFilePathDocx)))
                         Files.delete(Paths.get(contractFilePathDocx))
                     Files.copy(Paths.get(template.filePath), Paths.get(contractFilePathDocx))
 
@@ -280,7 +281,7 @@ class DocFileService(
                         .substringAfterLast("/")
                         .substringBeforeLast(".")
                     val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    if (Files.exists(Paths.get(contractFilePathPdf)))
+                    if(Files.exists(Paths.get(contractFilePathPdf)))
                         Files.delete(Paths.get(contractFilePathPdf))
                     convertWordToPdf(
                         contractFilePathDocx,
@@ -309,6 +310,7 @@ class DocFileService(
                 zipOut.closeEntry()
             }
         }
+
         job.status = TaskStatusEnum.FINISHED
         jobRepository.save(job)
     }
