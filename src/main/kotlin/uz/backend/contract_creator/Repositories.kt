@@ -58,7 +58,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 @Repository
 interface UserRepository : BaseRepository<User> {
-    fun existsByUsername(username: String): Boolean
+    fun existsByUserName(userName: String): Boolean
     fun findByUserNameAndDeletedFalse(username: String): User?
 }
 
