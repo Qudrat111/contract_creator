@@ -163,12 +163,20 @@ data class JobResponseDTO(
     val fileType: FileTypeEnum,
     val status: TaskStatusEnum,
     var hashCode: String?
-){
-    companion object{
+) {
+    companion object {
         fun toResponse(job: Job): JobResponseDTO {
             return job.run {
-                JobResponseDTO(fileType,status,hashCode)
+                JobResponseDTO(fileType, status, hashCode)
             }
         }
     }
 }
+
+data class GetOneTemplateKeysDTO(
+    val data: List<String>
+)
+
+data class GetAllTemplatesDTO(
+    val templates: List<TemplateDto>
+)

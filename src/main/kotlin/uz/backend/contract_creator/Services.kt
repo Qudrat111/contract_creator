@@ -4,7 +4,7 @@ import jakarta.transaction.Transactional
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.apache.poi.xwpf.usermodel.*
+import org.springframework.context.annotation.Lazy
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -204,12 +204,12 @@ class DocFileService(
         }
     }
 
-    fun getKeysByTemplateId(templateId: Long): List<String> {
+    fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
         val keys = mutableListOf<String>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
             for (field in template.fields) keys.add(field.name)
         }
-        return keys
+        return GetOneTemplateKeysDTO(keys)
     }
 
     fun createNewTemplate(file: MultipartFile, name: String): TemplateResponseDto {
@@ -235,14 +235,14 @@ class DocFileService(
         }
     }
 
-    fun getAllTemplates(): List<TemplateDto> {
+    fun getAllTemplates(): GetAllTemplatesDTO {
         val listTemplates = mutableListOf<TemplateDto>()
         templateRepository.findAllNotDeleted().let {
             it.forEach { template ->
                 listTemplates.add(TemplateDto.toResponse(template))
             }
         }
-        return listTemplates
+        return GetAllTemplatesDTO(listTemplates)
     }
 
 
@@ -277,6 +277,7 @@ class DocFileService(
 
         for (contractId in generateContractDTO.contractIds) {
             contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
+                job.contracts.add(contract)
                 contract.template.let { template ->
                     contract.contractFilePath?.let { cPath ->
                         Files.delete(Paths.get(cPath))
@@ -311,7 +312,8 @@ class DocFileService(
                 throw RuntimeException("Contract with id $contractId not found")
             }
         }
-        val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
+
+        jobRepository.save(job)
 
         ZipOutputStream(FileOutputStream(zipFileName)).use { zipOut ->
             filesToZip.forEach { fileName ->
@@ -578,11 +580,30 @@ class DocFileService(
     }
 }
 
+
 @Service
 class FieldServiceImpl(
     private val fieldRepository: FieldRepository,
     private val templateRepository: TemplateRepository,
+    private val docFileService: DocFileService
 ) : FieldService {
+
+    fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
+        val fileType = when (generateContractDTO.fileType.lowercase()) {
+            "pdf" -> "pdf"
+            "docx" -> "docx"
+            else -> throw InvalidFileTypeException()
+        }
+
+        val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
+        val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
+
+        val job = Job(fileTypeEnum, zipFileName)
+        docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
+
+        return job.toResponseDTO()
+    }
+
     override fun createField(dto: FieldDTO) {
         dto.run {
             if (fieldRepository.existsByName(name)) throw ExistsFieldException()
