@@ -508,9 +508,8 @@ class DocFileService(
         val userId = getUserId()
         val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
         return jobs.map {
-            val dto = it.toResponseDTO()
-            if (dto.status == TaskStatusEnum.FINISHED) dto.hashCode = it.hashCode
-            dto
+            if (it.status == TaskStatusEnum.FINISHED) it.toResponseDTOWithHashCode()
+            else it.toResponseDTO()
         }
     }
 }
@@ -538,9 +537,7 @@ class FieldServiceImpl(
         jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
 
-        val jobResponseDTO = job.toResponseDTO()
-        jobResponseDTO.hashCode = null
-        return jobResponseDTO
+        return job.toResponseDTO()
     }
 
     override fun createField(dto: FieldDTO) {
