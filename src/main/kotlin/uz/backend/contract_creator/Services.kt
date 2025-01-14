@@ -202,12 +202,12 @@ class DocFileService(
         }
     }
 
-    fun getKeysByTemplateId(templateId: Long): List<String> {
+    fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
         val keys = mutableListOf<String>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
             for (field in template.fields) keys.add(field.name)
         }
-        return keys
+        return GetOneTemplateKeysDTO(keys)
     }
 
     fun createNewTemplate(file: MultipartFile, name: String): TemplateResponseDto {
@@ -233,14 +233,14 @@ class DocFileService(
         }
     }
 
-    fun getAllTemplates(): List<TemplateDto> {
+    fun getAllTemplates(): GetAllTemplatesDTO {
         val listTemplates = mutableListOf<TemplateDto>()
         templateRepository.findAllNotDeleted().let {
             it.forEach { template ->
                 listTemplates.add(TemplateDto.toResponse(template))
             }
         }
-        return listTemplates
+        return GetAllTemplatesDTO(listTemplates)
     }
 
 
@@ -251,7 +251,6 @@ class DocFileService(
             }
         }
     }
-
 
 
     @Async
@@ -294,8 +293,8 @@ class DocFileService(
                 }
             }
                 ?: run {
-                throw RuntimeException("Contract with id $contractId not found")
-            }
+                    throw RuntimeException("Contract with id $contractId not found")
+                }
         }
 
         jobRepository.save(job)
@@ -340,7 +339,7 @@ class DocFileService(
 
 //    }
 
-    fun addContract(addContractDTO: List<CreateContractDTO>): List<ContractDto>{
+    fun addContract(addContractDTO: List<CreateContractDTO>): List<ContractDto> {
 
         val contracts: MutableList<ContractDto> = mutableListOf()
         for (contractDTO in addContractDTO) {
@@ -351,7 +350,7 @@ class DocFileService(
             }
             for (field in contractDTO.fields) {
                 val key = fieldRepository.findByNameAndDeletedFalse(field.key) ?: throw FieldNotFoundException()
-                contractFieldValueRepository.save(ContractFieldValue(contract,key,field.value))
+                contractFieldValueRepository.save(ContractFieldValue(contract, key, field.value))
 
             }
             contracts.add(ContractDto.toDTO(contract))
@@ -566,7 +565,7 @@ class FieldServiceImpl(
         val zipFileName = "./files/zips/${UUID.randomUUID()}.zip"
         val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
 
-        val job = Job(fileTypeEnum, zipFileName, )
+        val job = Job(fileTypeEnum, zipFileName)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
 
         return job.toResponseDTO()
