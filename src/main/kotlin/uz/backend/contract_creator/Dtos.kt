@@ -170,7 +170,7 @@ data class JobResponseDTO(
     companion object {
         fun toResponse(job: Job): JobResponseDTO {
             return job.run {
-                JobResponseDTO(fileType, status)
+                JobResponseDTO(id!!, fileType, status)
             }
         }
     }
