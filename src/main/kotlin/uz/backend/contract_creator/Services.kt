@@ -290,6 +290,7 @@ class DocFileService(
 
                     val createdFilePath = contractFilePathDocx.substringBeforeLast(".") + ".$fileType"
                     contract.contractFilePath = createdFilePath
+                    contractRepository.save(contract)
                     filesToZip.add(createdFilePath)
                 }
             }
