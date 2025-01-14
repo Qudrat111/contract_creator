@@ -63,7 +63,7 @@ class Template(
 @Entity
 class Field(
     @Column(length = 45, nullable = false, unique = true) var name: String,
-    @Enumerated(EnumType.STRING)@Column(length = 20) var type: TypeEnum
+    @Enumerated(EnumType.STRING) @Column(length = 20) var type: TypeEnum
 ) : BaseEntity() {
     fun toResponseDto(): FieldResponseDto {
         return FieldResponseDto(id!!, name, type)
