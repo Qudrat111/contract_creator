@@ -560,7 +560,9 @@ class FieldServiceImpl(
         jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
 
-        return job.toResponseDTO()
+        val jobResponseDTO = job.toResponseDTO()
+        jobResponseDTO.hashCode = null
+        return jobResponseDTO
     }
 
     override fun createField(dto: FieldDTO) {
