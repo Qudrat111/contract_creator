@@ -3,7 +3,6 @@ package uz.backend.contract_creator
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
-import org.springframework.context.annotation.Lazy
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -312,7 +311,7 @@ class DocFileService(
     }
 
     fun addContract(addContract: AddContractDTO): ContractResponse? {
-        val addContractFieldValues = mutableListOf<ContractDTO>()
+        val addContractFieldValues = mutableListOf<ContractCreateDTO>()
         var contractId: Long? = null
         templateRepository.findByIdAndDeletedFalse(addContract.templateId)?.let { template ->
             contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
@@ -320,7 +319,7 @@ class DocFileService(
                 addContract.contractFieldValues.forEach { item ->
                     fieldRepository.findByNameAndDeletedFalse(item.fieldName)?.let { field ->
                         addContractFieldValues.add(
-                            ContractDTO.toResponse(
+                            ContractCreateDTO.toResponse(
                                 contractFieldValueRepository.saveAndRefresh(
                                     ContractFieldValue(
                                         contract,
@@ -339,14 +338,14 @@ class DocFileService(
     }
 
     fun updateContract(updateContract: UpdateContractDTO): ContractResponse? {
-        val updateContractFieldValues = mutableListOf<ContractDTO>()
+        val updateContractFieldValues = mutableListOf<ContractCreateDTO>()
         contractRepository.findByIdAndDeletedFalse(updateContract.contractId)?.let { contract ->
             updateContract.contactFieldValues.forEach { item ->
                 fieldRepository.findByNameAndDeletedFalse(item.fieldName)?.let { field ->
                     contractFieldValueRepository.findContractFieldValue(contract.id!!, field.id!!).let {
                         it.value = item.value
                         updateContractFieldValues.add(
-                            ContractDTO.toResponse(contractFieldValueRepository.save(it))
+                            ContractCreateDTO.toResponse(contractFieldValueRepository.save(it))
                         )
                     }
                 } ?: throw FieldNotFoundException()

@@ -77,26 +77,26 @@ data class GenerateContractDTO(
 
 data class AddContractDTO(
     @NotNull val templateId: Long,
-    @NotNull val contractFieldValues: List<ContractDTO>,
+    @NotNull val contractFieldValues: List<ContractCreateDTO>,
 )
 
 data class ContractResponse(
     val contractId: Long,
-    val contract: List<ContractDTO>,
+    val contract: List<ContractCreateDTO>,
 ) {
     companion object {
-        fun toResponse(contractId: Long, contractFieldValues: List<ContractDTO>) =
+        fun toResponse(contractId: Long, contractFieldValues: List<ContractCreateDTO>) =
             ContractResponse(contractId, contractFieldValues)
     }
 }
 
-data class ContractDTO(
+data class ContractCreateDTO(
     @NotNull val fieldName: String,
     @NotNull val value: String
 ) {
     companion object {
         fun toResponse(contractFiledValue: ContractFieldValue) =
-            ContractDTO(
+            ContractCreateDTO(
                 contractFiledValue.field.name,
                 contractFiledValue.value
             )
@@ -106,7 +106,7 @@ data class ContractDTO(
 
 data class UpdateContractDTO(
     @NotNull val contractId: Long,
-    @NotNull val contactFieldValues: List<ContractDTO>
+    @NotNull val contactFieldValues: List<ContractCreateDTO>
 )
 
 data class TemplateDto(
