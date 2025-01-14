@@ -16,14 +16,12 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
 
     @ExceptionHandler(BaseExceptionHandler::class)
     fun handleAccountException(ex: BaseExceptionHandler): BaseMessage {
-        println("asd1 $ex")
         return ex.getErrorMessage(errorMessageSource)
     }
 
 
     @ExceptionHandler(MethodArgumentNotValidException::class)
     fun handleMethodArgumentNotValidException(ex: MethodArgumentNotValidException): ResponseEntity<BaseMessage> {
-        println("asd2 $ex")
         val errors = ex.bindingResult.fieldErrors.joinToString("\n") {
             "(${it.field}) ${it.defaultMessage} (${
                 errorMessageSource.getMessage(
@@ -39,7 +37,6 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
     fun handleGeneralException(ex: Exception): BaseMessage {
-        println("asd3 $ex")
         return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
     }
 }

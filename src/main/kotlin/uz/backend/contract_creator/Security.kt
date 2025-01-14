@@ -65,9 +65,7 @@ class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val au
             response.sendError(401)
         }
 
-        println("qwe1")
         if (Objects.isNull(username)) throw BadCredentialsException()
-        println("qwe2")
 
         val userDetails: UserDetails = authService.loadUserByUsername(username)
 
@@ -133,8 +131,7 @@ class SecurityConfig(
             Customizer { auth ->
                 auth
                     .requestMatchers("/auth/**").permitAll()
-//                    .anyRequest().authenticated()
-                    .anyRequest().permitAll()
+                    .anyRequest().authenticated()
             }
         )
         httpSecurity
