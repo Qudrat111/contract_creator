@@ -79,7 +79,6 @@ class Contract(
 
 @Entity(name = "contractFieldValue")
 class ContractFieldValue(
-
     @ManyToOne val contract: Contract,
     @ManyToOne val field: Field,
     @Column(nullable = false) var value: String,
