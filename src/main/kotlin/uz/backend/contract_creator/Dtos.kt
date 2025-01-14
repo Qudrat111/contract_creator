@@ -76,7 +76,8 @@ data class GenerateContractDTO(
 )
 
 data class AddContractDTO(
-    val contract: List<CreateContractDTO>,
+    @NotNull val templateId: Long,
+    @NotNull val contract: List<CreateContractDTO>,
 ) {
     companion object {
         fun toResponse(contractFiledValue: ContractFieldValue) =
@@ -89,8 +90,8 @@ data class AddContractDTO(
 }
 
 data class CreateContractDTO(
-    val templateId: Long,
-    val fields: MutableMap<String,String>
+    @NotNull val fieldName: String,
+    @NotNull val value: String
 )
 
 data class ContractFieldValueDto(

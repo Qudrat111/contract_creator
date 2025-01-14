@@ -63,7 +63,7 @@ class Template(
 @Entity
 class Field(
     @Column(length = 45, nullable = false, unique = true) var name: String,
-    @Enumerated(EnumType.STRING)@Column(length = 20) var type: TypeEnum
+    @Enumerated(EnumType.STRING) @Column(length = 20) var type: TypeEnum
 ) : BaseEntity() {
     fun toResponseDto(): FieldResponseDto {
         return FieldResponseDto(id!!, name, type)
@@ -95,8 +95,13 @@ class ContractAllowedUser(
 
 @Entity
 class Job(
-    val status : TaskStatusEnum,
     val fileType: FileTypeEnum,
     val zipFilePath: String,
+    var status: TaskStatusEnum = TaskStatusEnum.PENDING,
     @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
-): BaseEntity()
+    val hashCode: String = UUID.randomUUID().toString(),
+) : BaseEntity() {
+    fun toResponseDTO(): JobResponseDTO {
+        return JobResponseDTO(fileType, status, hashCode)
+    }
+}

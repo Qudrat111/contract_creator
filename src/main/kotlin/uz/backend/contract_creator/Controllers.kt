@@ -119,7 +119,8 @@ class ContractController(
     private val fileService: FieldServiceImpl
 ) {
     @PostMapping("/generate")
-    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) = fileService.generateContract(generateContractDTO)
+    fun generateContract(@RequestBody generateContractDTO: GenerateContractDTO) =
+        fileService.generateContract(generateContractDTO)
 
     @GetMapping("/download/{hashCode}")
     fun downloadContract(@PathVariable hashCode: String) = docFileService.downloadContract(hashCode)
@@ -132,13 +133,13 @@ class ContractController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
     @PostMapping("/add")
-    fun addContract(@RequestBody contractDTOs: List<CreateContractDTO>) = docFileService.addContract(contractDTOs)
+    fun addContract(@RequestBody contractDTOs: AddContractDTO) = docFileService.addContract(contractDTOs)
 
     @PreAuthorize(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
-    @PutMapping
+    @PutMapping("/update")
     fun updateContract(@RequestBody updateContractDTO: UpdateContractDTO) =
         docFileService.updateContract(updateContractDTO)
 
