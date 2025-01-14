@@ -202,6 +202,7 @@ class DocFileService(
     }
 
     fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
+        if (!templateRepository.existsByIdAndDeletedFalse(templateId)) throw TemplateNotFoundException()
         val keys = mutableListOf<GetFieldDto>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
             for (field in template.fields) keys.add(GetFieldDto(field.name, true))
@@ -227,6 +228,7 @@ class DocFileService(
     }
 
     fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
+        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw TemplateNotFoundException()
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
             getResource(it.filePath)
         }
@@ -360,6 +362,7 @@ class DocFileService(
     }
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
+        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw ContractNotFoundException()
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val userId = getUserId()
             val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
