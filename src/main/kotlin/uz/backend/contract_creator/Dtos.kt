@@ -90,8 +90,7 @@ data class AddContractDTO(
 
 data class CreateContractDTO(
     val templateId: Long,
-    val fieldName: String,
-    val value: String
+    val fields: MutableMap<String,String>
 )
 
 data class ContractFieldValueDto(
