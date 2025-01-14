@@ -247,7 +247,7 @@ class DocFileService(
 
     private fun getFieldsByKeys(keys: MutableList<String>): List<Field> {
         return keys.map {
-            fieldRepository.findByName(it) ?: run {
+            fieldRepository.findByNameAndDeletedFalse(it) ?: run {
                 fieldRepository.save(Field(it, TypeEnum.STRING))
             }
         }
@@ -385,13 +385,10 @@ class DocFileService(
             val filePath = Paths.get(job.zipFilePath)
             val resource = UrlResource(filePath.toUri())
 
-            jobRepository.trash(job.id!!)
-
             if (resource.exists() && resource.isReadable) {
                 return ResponseEntity.ok().header(
                     HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contracts.zip\""
                 ).body(resource)
-//                Files.delete(Paths.get(job.zipFilePath))
             }
         }
         throw FileNotFoundException()
