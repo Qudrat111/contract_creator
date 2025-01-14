@@ -61,3 +61,8 @@ class AccessDeniedException:BaseExceptionHandler(){
 class InvalidFileTypeException():BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.INVALID_FILE_TYPE
 }
+
+class UsernameAlreadyExists():BaseExceptionHandler(){
+    override fun errorCode() = ErrorCodes.USERNAME_ALREADY_EXISTS
+
+}

@@ -69,6 +69,7 @@ class AuthServiceImpl(
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
         return signInDTO.run {
+            if(userRepository.existsByUsername(username)) throw UsernameAlreadyExists()
             val encoded = passwordEncoder.encode(signInDTO.password)
             this.password = encoded
             UserDTO.toResponse(userRepository.save(this.toEntity()))
