@@ -10,6 +10,9 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.springframework.web.servlet.i18n.SessionLocaleResolver
 import java.util.*
+import org.springframework.boot.CommandLineRunner
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.stereotype.Component
 
 
 @Configuration
@@ -47,7 +50,26 @@ class WebMvcConfig : WebMvcConfigurer {
         }
     }
 }
+
 @Configuration
 @EnableAsync
 class AsyncConfig {
+}
+
+
+@Component
+class DataLoader(
+    private val userRepository: UserRepository,
+    private val passwordEncoder: PasswordEncoder,
+) : CommandLineRunner {
+    override fun run(vararg args: String?) {
+        println("Data Loader ishladi!")
+        loadSampleData()
+    }
+
+    private fun loadSampleData() {
+        if (!userRepository.existsByUserName("admin")) {
+            userRepository.save(User("ADMIN", "ADMIN", "admin", passwordEncoder.encode("123"), RoleEnum.ROLE_ADMIN))
+        }
+    }
 }

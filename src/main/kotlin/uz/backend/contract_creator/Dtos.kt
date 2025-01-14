@@ -77,36 +77,37 @@ data class GenerateContractDTO(
 
 data class AddContractDTO(
     @NotNull val templateId: Long,
-    @NotNull val contract: List<CreateContractDTO>,
+    @NotNull val contractFieldValues: List<ContractCreateDTO>,
+)
+
+data class ContractResponse(
+    val contractId: Long,
+    val contract: List<ContractCreateDTO>,
+) {
+    companion object {
+        fun toResponse(contractId: Long, contractFieldValues: List<ContractCreateDTO>) =
+            ContractResponse(contractId, contractFieldValues)
+    }
+}
+
+data class ContractCreateDTO(
+    @NotNull val fieldName: String,
+    @NotNull val value: String
 ) {
     companion object {
         fun toResponse(contractFiledValue: ContractFieldValue) =
-            ContractFieldValueDto(
-                contractFiledValue.contract.id!!,
+            ContractCreateDTO(
                 contractFiledValue.field.name,
                 contractFiledValue.value
             )
     }
 }
 
-data class CreateContractDTO(
-    @NotNull val fieldName: String,
-    @NotNull val value: String
-)
-
-data class ContractFieldValueDto(
-    val contractId: Long,
-    val fieldName: String,
-    val value: String
-)
 
 data class UpdateContractDTO(
-    @NotNull val contactFieldValues: List<ContractFieldValueDto>
-) {
-    companion object {
-        fun toResponse(contractFiledValue: ContractFieldValue) = AddContractDTO.toResponse(contractFiledValue)
-    }
-}
+    @NotNull val contractId: Long,
+    @NotNull val contactFieldValues: List<ContractCreateDTO>
+)
 
 data class TemplateDto(
     val id: Long?,

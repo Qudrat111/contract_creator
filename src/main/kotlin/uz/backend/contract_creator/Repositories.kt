@@ -62,7 +62,10 @@ interface UserRepository : BaseRepository<User> {
     fun findByUserNameAndDeletedFalse(username: String): User?
 }
 
-interface TemplateRepository : BaseRepository<Template>
+interface TemplateRepository : BaseRepository<Template> {
+    fun existsByIdAndDeletedFalse(templateId: Long): Boolean
+}
+
 interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
     fun findByName(name: String): Field?

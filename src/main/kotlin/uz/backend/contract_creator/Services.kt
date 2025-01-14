@@ -185,7 +185,8 @@ class DocFileService(
                     row.tableCells.forEach { cell ->
                         cell.paragraphs.forEach { paragraph ->
                             processParagraph(
-                                paragraph, keyValueMap
+                                paragraph,
+                                keyValueMap
                             )
                         }
                     }
@@ -201,6 +202,7 @@ class DocFileService(
     }
 
     fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
+        if (!templateRepository.existsByIdAndDeletedFalse(templateId)) throw TemplateNotFoundException()
         val keys = mutableListOf<GetFieldDto>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
             for (field in template.fields) keys.add(GetFieldDto(field.name, true))
@@ -216,7 +218,9 @@ class DocFileService(
         }
         val keys = getKeys(filePath)
         val fields = getFieldsByKeys(keys)
-        return templateRepository.save(Template(name, filePath, fields.toMutableList())).toResponseDto()
+        return templateRepository
+            .save(Template(name, filePath, fields.toMutableList()))
+            .toResponseDto()
     }
 
     fun deleteTemplate(id: Long) {
@@ -224,6 +228,7 @@ class DocFileService(
     }
 
     fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
+        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw TemplateNotFoundException()
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
             getResource(it.filePath)
         }
@@ -307,17 +312,21 @@ class DocFileService(
         return map
     }
 
-    fun addContract(addContract: AddContractDTO): List<ContractFieldValueDto> {
-        val addContractFieldValues = mutableListOf<ContractFieldValueDto>()
+    fun addContract(addContract: AddContractDTO): ContractResponse? {
+        val addContractFieldValues = mutableListOf<ContractCreateDTO>()
+        var contractId: Long? = null
         templateRepository.findByIdAndDeletedFalse(addContract.templateId)?.let { template ->
             contractRepository.saveAndRefresh(Contract(template, null)).let { contract ->
-                addContract.contract.forEach { item ->
+                contractId = contract.id
+                addContract.contractFieldValues.forEach { item ->
                     fieldRepository.findByNameAndDeletedFalse(item.fieldName)?.let { field ->
                         addContractFieldValues.add(
-                            AddContractDTO.toResponse(
-                                contractFieldValueRepository.save(
+                            ContractCreateDTO.toResponse(
+                                contractFieldValueRepository.saveAndRefresh(
                                     ContractFieldValue(
-                                        contract, field, item.value
+                                        contract,
+                                        field,
+                                        item.value
                                     )
                                 )
                             )
@@ -327,28 +336,24 @@ class DocFileService(
             }
         } ?: throw TemplateNotFoundException()
 
-        return addContractFieldValues
+        return contractId?.let { ContractResponse(it, addContractFieldValues) }
     }
 
-    fun updateContract(updateContract: UpdateContractDTO): List<ContractFieldValueDto> {
-        val updateContractFieldValues = mutableListOf<ContractFieldValueDto>()
-        updateContract.contactFieldValues.forEach { item ->
-            contractRepository.findByIdAndDeletedFalse(item.contractId)?.let { contract ->
+    fun updateContract(updateContract: UpdateContractDTO): ContractResponse? {
+        val updateContractFieldValues = mutableListOf<ContractCreateDTO>()
+        contractRepository.findByIdAndDeletedFalse(updateContract.contractId)?.let { contract ->
+            updateContract.contactFieldValues.forEach { item ->
                 fieldRepository.findByNameAndDeletedFalse(item.fieldName)?.let { field ->
                     contractFieldValueRepository.findContractFieldValue(contract.id!!, field.id!!).let {
                         it.value = item.value
                         updateContractFieldValues.add(
-                            UpdateContractDTO.toResponse(
-                                contractFieldValueRepository.save(
-                                    it
-                                )
-                            )
+                            ContractCreateDTO.toResponse(contractFieldValueRepository.save(it))
                         )
                     }
                 } ?: throw FieldNotFoundException()
-            } ?: throw ContractNotFoundException()
-        }
-        return updateContractFieldValues
+            }
+        } ?: throw ContractNotFoundException()
+        return ContractResponse(updateContract.contractId, updateContractFieldValues)
     }
 
     fun deleteContract(id: Long) {
@@ -357,6 +362,7 @@ class DocFileService(
     }
 
     fun getContract(id: Long): ResponseEntity<Resource>? {
+        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw ContractNotFoundException()
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val userId = getUserId()
             val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
@@ -399,7 +405,9 @@ class DocFileService(
         if (contentType == null) {
             contentType = "application/octet-stream"
         }
-        return ResponseEntity.ok().contentType(MediaType.parseMediaType(contentType)).body(resource)
+        return ResponseEntity.ok()
+            .contentType(MediaType.parseMediaType(contentType))
+            .body(resource)
     }
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {
