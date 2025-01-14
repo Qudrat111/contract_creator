@@ -68,7 +68,7 @@ class AuthServiceImpl(
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
         return signInDTO.run {
-            if (userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
+            if(userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
             val encoded = passwordEncoder.encode(signInDTO.password)
             this.password = encoded
             UserDTO.toResponse(userRepository.save(this.toEntity()))
@@ -515,11 +515,18 @@ class DocFileService(
 
     fun getJobs(): List<JobResponseDTO> {
         val userId = getUserId()
-        val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
+        val jobs = jobRepository.findAllByCreatedByAndDeletedFalseOrderByIdDesc(userId!!)
         return jobs.map {
             if (it.status == TaskStatusEnum.FINISHED) it.toResponseDTOWithHashCode()
             else it.toResponseDTO()
         }
+    }
+
+    fun getOneJob(id: Long): JobResponseDTO {
+        val userId = getUserId()
+        val job = jobRepository.findByIdAndCreatedByAndDeletedFalse(id,userId!!)?: throw JobNotFoundException()
+        return  if (job.status == TaskStatusEnum.FINISHED) job.toResponseDTOWithHashCode()
+        else job.toResponseDTO()
     }
 }
 

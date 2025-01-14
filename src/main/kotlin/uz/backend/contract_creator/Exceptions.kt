@@ -66,3 +66,8 @@ class UsernameAlreadyExists():BaseExceptionHandler(){
     override fun errorCode() = ErrorCodes.USERNAME_ALREADY_EXISTS
 
 }
+
+class JobNotFoundException():BaseExceptionHandler(){
+    override fun errorCode() = ErrorCodes.JOB_NOT_FOUND
+
+}

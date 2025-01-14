@@ -162,6 +162,7 @@ data class FilePathDTO(
 )
 
 data class JobResponseDTO(
+    val id : Long,
     val fileType: FileTypeEnum,
     val status: TaskStatusEnum,
     var hashCode: String? = null
@@ -169,7 +170,7 @@ data class JobResponseDTO(
     companion object {
         fun toResponse(job: Job): JobResponseDTO {
             return job.run {
-                JobResponseDTO(fileType, status)
+                JobResponseDTO(id!!,fileType, status)
             }
         }
     }

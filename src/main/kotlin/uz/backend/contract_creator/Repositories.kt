@@ -58,7 +58,7 @@ class BaseRepositoryImpl<T : BaseEntity>(
 
 @Repository
 interface UserRepository : BaseRepository<User> {
-    fun existsByUserName(userName: String): Boolean
+    fun existsByUserName(username: String): Boolean
     fun findByUserNameAndDeletedFalse(username: String): User?
 }
 
@@ -95,5 +95,6 @@ interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>
 interface JobRepository : BaseRepository<Job> {
     fun findByHashCode(hashCode: String): Job?
     fun findByHashCodeAndDeletedFalse(hashCode: String): Job?
-    fun findAllByCreatedByAndDeletedFalse(createdBy: Long): List<Job>
+    fun findAllByCreatedByAndDeletedFalseOrderByIdDesc(createdBy: Long): List<Job>
+    fun findByIdAndCreatedByAndDeletedFalse(id: Long, createdBy: Long): Job?
 }

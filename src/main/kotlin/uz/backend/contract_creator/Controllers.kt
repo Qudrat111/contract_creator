@@ -164,6 +164,9 @@ class ContractController(
 
     @GetMapping("get-jobs")
     fun getJobs() = docFileService.getJobs()
+
+    @GetMapping("get-job/{id}")
+    fun getOneJob(@PathVariable id: Long) = docFileService.getOneJob(id)
 }
 
 
