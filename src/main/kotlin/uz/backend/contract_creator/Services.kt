@@ -3,6 +3,7 @@ package uz.backend.contract_creator
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
+import org.springframework.context.annotation.Lazy
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
 import org.springframework.http.HttpHeaders
@@ -68,6 +69,7 @@ class AuthServiceImpl(
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
         return signInDTO.run {
+            if (userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
             val encoded = passwordEncoder.encode(signInDTO.password)
             this.password = encoded
             UserDTO.toResponse(userRepository.save(this.toEntity()))
@@ -158,8 +160,7 @@ class DocFileService(
                 if (lastIndex > -1) {
                     val key = text.substring(firstIndex, lastIndex)
                     keyValueMap[key]?.let { value ->
-                        val newText: String =
-                            text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
+                        val newText: String = text.substring(0, firstIndex - 2) + value + text.substring(lastIndex + 2)
                         for (run in paragraph.runs) {
                             run.setText("", 0)
                         }
@@ -202,9 +203,9 @@ class DocFileService(
     }
 
     fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
-        val keys = mutableListOf<String>()
+        val keys = mutableListOf<GetFieldDto>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-            for (field in template.fields) keys.add(field.name)
+            for (field in template.fields) keys.add(GetFieldDto(field.name, true))
         }
         return GetOneTemplateKeysDTO(keys)
     }
@@ -261,43 +262,33 @@ class DocFileService(
             contractRepository.findByIdAndDeletedFalse(contractId)?.let { contract ->
                 job.contracts.add(contract)
                 contract.template.let { template ->
-
-                    var fileName = template.filePath
-                        .substringAfterLast("/")
-                        .substringBeforeLast(".")
+                    var fileName = template.filePath.substringAfterLast("/").substringBeforeLast(".")
                     fileName = fileName.substring(0, fileName.length - 36)
-                    fileName = fileName + UUID.randomUUID() + "." + fileType
-                    val contractFilePathDocx = "./files/contracts/${fileName}"
-                    if (Files.exists(Paths.get(contractFilePathDocx)))
-                        Files.delete(Paths.get(contractFilePathDocx))
+                    fileName = fileName + UUID.randomUUID() + ".docx"
+                    val contractFilePathDocx = "./files/contracts/$fileName"
+
                     Files.copy(Paths.get(template.filePath), Paths.get(contractFilePathDocx))
 
                     val contractFieldValues = contractFieldValueRepository.findAllByContractId(contractId)
                     val fields = contractFieldValueToMap(contractFieldValues)
                     changeAllKeysToValues(template.id!!, contractFilePathDocx, fields)
 
-                    fileName = template.filePath
-                        .substringAfterLast("/")
-                        .substringBeforeLast(".")
-                    val contractFilePathPdf = "./files/contracts/${fileName}.pdf"
-                    if (Files.exists(Paths.get(contractFilePathPdf)))
-                        Files.delete(Paths.get(contractFilePathPdf))
+                    fileName = fileName.substringBeforeLast(".") + ".pdf"
+                    val contractFilePathPdf = "./files/contracts/$fileName"
+                    if (Files.exists(Paths.get(contractFilePathPdf))) Files.delete(Paths.get(contractFilePathPdf))
                     convertWordToPdf(
-                        contractFilePathDocx,
-                        contractFilePathPdf
+                        contractFilePathDocx, contractFilePathPdf
                     )
 
                     val createdFilePath = contractFilePathDocx.substringBeforeLast(".") + ".$fileType"
                     contract.contractFilePath = createdFilePath
+                    contractRepository.save(contract)
                     filesToZip.add(createdFilePath)
                 }
+            } ?: run {
+                throw RuntimeException("Contract with id $contractId not found")
             }
-                ?: run {
-                    throw RuntimeException("Contract with id $contractId not found")
-                }
         }
-
-        jobRepository.save(job)
 
         ZipOutputStream(FileOutputStream(zipFileName)).use { zipOut ->
             filesToZip.forEach { fileName ->
@@ -396,8 +387,7 @@ class DocFileService(
 
             if (resource.exists() && resource.isReadable) {
                 return ResponseEntity.ok().header(
-                    HttpHeaders.CONTENT_DISPOSITION,
-                    "attachment; filename=\"contracts.zip\""
+                    HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contracts.zip\""
                 ).body(resource)
 //                Files.delete(Paths.get(job.zipFilePath))
             }
@@ -450,8 +440,10 @@ class DocFileService(
         val processBuilder = ProcessBuilder(
             "C:\\Program Files\\LibreOffice\\program\\soffice.exe",
             "--headless",
-            "--convert-to", "pdf",
-            "--outdir", outputFileDir.substringBeforeLast("/"),
+            "--convert-to",
+            "pdf",
+            "--outdir",
+            outputFileDir.substringBeforeLast("/"),
             inputFile
         )
         val process = processBuilder.start()
@@ -466,24 +458,20 @@ class DocFileService(
     private fun getKeys(filePath: String): MutableList<String> {
         val document = readDocFile(filePath)
         val keys = mutableSetOf<String>()
-        for (table in document.tables)
-            keys.addAll(getKeys(table))
+        for (table in document.tables) keys.addAll(getKeys(table))
         keys.addAll(getKeys(document.paragraphs))
         return keys.toMutableList()
     }
 
     private fun getKeys(table: XWPFTable): MutableList<String> {
         val keys = mutableListOf<String>()
-        for (row in table.rows)
-            for (tableCell in row.tableCells)
-                keys.addAll(getKeys(tableCell.paragraphs))
+        for (row in table.rows) for (tableCell in row.tableCells) keys.addAll(getKeys(tableCell.paragraphs))
         return keys
     }
 
     private fun getKeys(paragraphs: List<XWPFParagraph>): MutableList<String> {
         val keys = mutableListOf<String>()
-        for (paragraph in paragraphs)
-            keys.addAll(getKeys(paragraph))
+        for (paragraph in paragraphs) keys.addAll(getKeys(paragraph))
         return keys
     }
 
@@ -509,8 +497,7 @@ class DocFileService(
 
     fun upDateTemplate(id: Long, file: MultipartFile) {
         val template = templateRepository.findByIdAndDeletedFalse(id) ?: throw TemplateNotFoundException()
-        val filename =
-            file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
+        val filename = file.originalFilename!!.substringBeforeLast(".") + "-update-file-" + UUID.randomUUID() + ".docx"
         val filePath = "./files/templates/$filename"
         file.inputStream.use { inputStream ->
             Files.copy(inputStream, Paths.get(filePath))
@@ -528,10 +515,8 @@ class DocFileService(
         val userId = getUserId()
         val jobs = jobRepository.findAllByCreatedByAndDeletedFalse(userId!!)
         return jobs.map {
-            val dto = it.toResponseDTO()
-            if (dto.status == TaskStatusEnum.FINISHED)
-                dto.hashCode = it.hashCode
-            dto
+            if (it.status == TaskStatusEnum.FINISHED) it.toResponseDTOWithHashCode()
+            else it.toResponseDTO()
         }
     }
 }
@@ -541,7 +526,8 @@ class DocFileService(
 class FieldServiceImpl(
     private val fieldRepository: FieldRepository,
     private val templateRepository: TemplateRepository,
-    private val docFileService: DocFileService
+    private val docFileService: DocFileService,
+    private val jobRepository: JobRepository
 ) : FieldService {
 
     fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
@@ -555,6 +541,7 @@ class FieldServiceImpl(
         val fileTypeEnum = FileTypeEnum.valueOf(fileType.uppercase())
 
         val job = Job(fileTypeEnum, zipFileName)
+        jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
 
         return job.toResponseDTO()
@@ -579,8 +566,7 @@ class FieldServiceImpl(
     override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
         val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
         val template =
-            templateRepository.findByIdAndDeletedFalse(updateDto.templateId)
-                ?: throw TemplateNotFoundException()
+            templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()
         val fields = template.fields
 
         if (!fields.contains(field)) {

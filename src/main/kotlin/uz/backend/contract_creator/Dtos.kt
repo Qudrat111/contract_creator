@@ -164,19 +164,24 @@ data class FilePathDTO(
 data class JobResponseDTO(
     val fileType: FileTypeEnum,
     val status: TaskStatusEnum,
-    var hashCode: String?
+    var hashCode: String? = null
 ) {
     companion object {
         fun toResponse(job: Job): JobResponseDTO {
             return job.run {
-                JobResponseDTO(fileType, status, hashCode)
+                JobResponseDTO(fileType, status)
             }
         }
     }
 }
 
 data class GetOneTemplateKeysDTO(
-    val data: List<String>
+    val data: List<GetFieldDto>
+)
+
+data class GetFieldDto(
+    val key: String,
+    val required: Boolean,
 )
 
 data class GetAllTemplatesDTO(
