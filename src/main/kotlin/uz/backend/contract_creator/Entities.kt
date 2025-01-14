@@ -99,7 +99,7 @@ class Job(
     val zipFilePath: String,
     var status: TaskStatusEnum = TaskStatusEnum.PENDING,
     @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
-    val hashCode: String = UUID.randomUUID().toString(),
+    val hashCode: String = UUID.randomUUID().toString()
 ) : BaseEntity() {
     fun toResponseDTO(): JobResponseDTO {
         return JobResponseDTO(fileType, status, hashCode)

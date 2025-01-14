@@ -24,6 +24,7 @@ enum class ErrorCodes(val code: Int) {
     CONTRACT_NOT_FOUND(106),
     ACCESS_DENIED(107),
     INVALID_FILE_TYPE(108),
+    USERNAME_ALREADY_EXISTS(109)
 }
 
 enum class TaskStatusEnum {
