@@ -161,6 +161,7 @@ data class FilePathDTO(
 )
 
 data class JobResponseDTO(
+    val id: Long,
     val fileType: FileTypeEnum,
     val status: TaskStatusEnum,
     var hashCode: String? = null

@@ -102,10 +102,10 @@ class Job(
     val hashCode: String = UUID.randomUUID().toString()
 ) : BaseEntity() {
     fun toResponseDTO(): JobResponseDTO {
-        return JobResponseDTO(fileType, status)
+        return JobResponseDTO(id!!, fileType, status)
     }
 
     fun toResponseDTOWithHashCode(): JobResponseDTO {
-        return JobResponseDTO(fileType, status, hashCode)
+        return JobResponseDTO(id!!, fileType, status, hashCode)
     }
 }
