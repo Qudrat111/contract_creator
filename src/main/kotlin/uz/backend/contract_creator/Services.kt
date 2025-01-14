@@ -68,7 +68,7 @@ class AuthServiceImpl(
 
     override fun signIn(signInDTO: SignInDTO): UserDTO {
         return signInDTO.run {
-            if(userRepository.existsByUsername(username)) throw UsernameAlreadyExists()
+            if(userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
             val encoded = passwordEncoder.encode(signInDTO.password)
             this.password = encoded
             UserDTO.toResponse(userRepository.save(this.toEntity()))
@@ -203,9 +203,9 @@ class DocFileService(
     }
 
     fun getKeysByTemplateId(templateId: Long): GetOneTemplateKeysDTO {
-        val keys = mutableListOf<String>()
+        val keys = mutableListOf<GetFieldDto>()
         templateRepository.findByIdAndDeletedFalse(templateId)?.let { template ->
-            for (field in template.fields) keys.add(field.name)
+            for (field in template.fields) keys.add(GetFieldDto(field.name, true))
         }
         return GetOneTemplateKeysDTO(keys)
     }

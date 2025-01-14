@@ -175,7 +175,12 @@ data class JobResponseDTO(
 }
 
 data class GetOneTemplateKeysDTO(
-    val data: List<String>
+    val data: List<GetFieldDto>
+)
+
+data class GetFieldDto(
+    val key: String,
+    val required: Boolean,
 )
 
 data class GetAllTemplatesDTO(
