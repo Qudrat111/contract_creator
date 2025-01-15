@@ -5,6 +5,8 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph
 import org.apache.poi.xwpf.usermodel.XWPFTable
 import org.springframework.core.io.Resource
 import org.springframework.core.io.UrlResource
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
@@ -26,16 +28,16 @@ import java.util.zip.ZipOutputStream
 
 interface AuthService : UserDetailsService {
 
-    fun logIn(signInDTO: LogInDTO): TokenDTO
-    fun signIn(signInDTO: SignInDTO): UserDTO
+    fun logIn(signInDTO: LoginRequest): TokenDTO
+    fun signIn(signUpRequest: SignUpRequest): UserResponse
 
 }
 
 interface FieldService {
-    fun createField(dto: FieldDTO)
-    fun getFieldById(id: Long): FieldGetDto
-    fun getAllField(): List<FieldGetDto>
-    fun updateField(id: Long, updateDto: FieldUpdateDTO)
+    fun createField(dto: FieldRequest)
+    fun getFieldById(id: Long): FieldResponse
+    fun getAllField(pageable: Pageable): Page<FieldResponse>
+    fun updateField(id: Long, updateDto: FieldUpdateRequest)
     fun deleteField(id: Long)
 }
 
@@ -46,7 +48,7 @@ class AuthServiceImpl(
     private val passwordEncoder: PasswordEncoder,
     private val jwtProvider: JwtProvider,
 ) : AuthService {
-    override fun logIn(signInDTO: LogInDTO): TokenDTO {
+    override fun logIn(signInDTO: LoginRequest): TokenDTO {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
         authenticationProvider.authenticate(authentication)
@@ -61,17 +63,17 @@ class AuthServiceImpl(
 
         val userEntity = userRepository.findByUserNameAndDeletedFalse(user.username) ?: throw UserNotFoundException()
 
-        val userTokenDTO = TokenDTO(token, UserDTO.toResponse(userEntity))
+        val userTokenDTO = TokenDTO(token, UserResponse.toResponse(userEntity))
 
         return userTokenDTO
     }
 
-    override fun signIn(signInDTO: SignInDTO): UserDTO {
-        return signInDTO.run {
+    override fun signIn(signUpRequest: SignUpRequest): UserResponse {
+        return signUpRequest.run {
             if(userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
-            val encoded = passwordEncoder.encode(signInDTO.password)
+            val encoded = passwordEncoder.encode(signUpRequest.password)
             this.password = encoded
-            UserDTO.toResponse(userRepository.save(this.toEntity()))
+            UserResponse.toResponse(userRepository.save(this.toEntity()))
         }
     }
 
@@ -82,9 +84,9 @@ class AuthServiceImpl(
 }
 
 interface UserService {
-    fun changeRole(userId: Long, role: RoleEnum): UserDTO
-    fun getAllUsers(): List<UserDTO>
-    fun getOneUser(userId: Long): UserDTO
+    fun changeRole(userId: Long, role: RoleEnum): UserResponse
+    fun getAllUsers(): List<UserResponse>
+    fun getOneUser(userId: Long): UserResponse
     fun givePermission(userId: Long, contractId: Long)
 }
 
@@ -95,21 +97,21 @@ class UserServiceImpl(
     private val contractAllowedUserRepository: ContactAllowedUserRepository,
 ) : UserService {
 
-    override fun changeRole(userId: Long, role: RoleEnum): UserDTO {
+    override fun changeRole(userId: Long, role: RoleEnum): UserResponse {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
         user.role = role
-        return UserDTO.toResponse(userRepository.save(user))
+        return UserResponse.toResponse(userRepository.save(user))
     }
 
-    override fun getAllUsers(): List<UserDTO> {
+    override fun getAllUsers(): List<UserResponse> {
         return userRepository.findAllNotDeleted().map {
-            UserDTO.toResponse(it)
+            UserResponse.toResponse(it)
         }
     }
 
-    override fun getOneUser(userId: Long): UserDTO {
+    override fun getOneUser(userId: Long): UserResponse {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
-        return UserDTO.toResponse(user)
+        return UserResponse.toResponse(user)
     }
 
     override fun givePermission(userId: Long, contractId: Long) {
@@ -234,14 +236,8 @@ class DocFileService(
         }
     }
 
-    fun getAllTemplates(): GetAllTemplatesDTO {
-        val listTemplates = mutableListOf<TemplateDto>()
-        templateRepository.findAllNotDeleted().let {
-            it.forEach { template ->
-                listTemplates.add(TemplateDto.toResponse(template))
-            }
-        }
-        return GetAllTemplatesDTO(listTemplates)
+    fun getAllTemplates(pageable: Pageable): Page<TemplateResponse> {
+        return templateRepository.findAllNotDeletedForPageable(pageable).map {TemplateResponse.toResponse(it)  }
     }
 
 
@@ -312,7 +308,7 @@ class DocFileService(
         return map
     }
 
-    fun addContract(addContract: AddContractDTO): ContractResponse? {
+    fun addContract(addContract: AddContractRequest): ContractResponse? {
         val addContractFieldValues = mutableListOf<ContractCreateDTO>()
         var contractId: Long? = null
         templateRepository.findByIdAndDeletedFalse(addContract.templateId)?.let { template ->
@@ -339,7 +335,7 @@ class DocFileService(
         return contractId?.let { ContractResponse(it, addContractFieldValues) }
     }
 
-    fun updateContract(updateContract: UpdateContractDTO): ContractResponse? {
+    fun updateContract(updateContract: UpdateContractRequest): ContractResponse? {
         val updateContractFieldValues = mutableListOf<ContractCreateDTO>()
         contractRepository.findByIdAndDeletedFalse(updateContract.contractId)?.let { contract ->
             updateContract.contactFieldValues.forEach { item ->
@@ -553,23 +549,23 @@ class FieldServiceImpl(
         return job.toResponseDTO()
     }
 
-    override fun createField(dto: FieldDTO) {
+    override fun createField(dto: FieldRequest) {
         dto.run {
             if (fieldRepository.existsByName(name)) throw ExistsFieldException()
-            fieldRepository.saveAndRefresh(FieldDTO.toEntity(name, type))
+            fieldRepository.saveAndRefresh(FieldRequest.toEntity(name, type))
         }
     }
 
-    override fun getFieldById(id: Long): FieldGetDto {
-        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldGetDto.toDTO(it) }
+    override fun getFieldById(id: Long): FieldResponse {
+        return fieldRepository.findByIdAndDeletedFalse(id)?.let { FieldResponse.toDTO(it) }
             ?: throw FieldNotFoundException()
     }
 
-    override fun getAllField(): List<FieldGetDto> {
-        return fieldRepository.findAllNotDeleted().map { FieldGetDto.toDTO(it) }
+    override fun getAllField(pageable: Pageable): Page<FieldResponse> {
+        return fieldRepository.findAllNotDeletedForPageable(pageable).map { FieldResponse.toDTO(it) }
     }
 
-    override fun updateField(id: Long, updateDto: FieldUpdateDTO) {
+    override fun updateField(id: Long, updateDto: FieldUpdateRequest) {
         val field = fieldRepository.findByIdAndDeletedFalse(id) ?: throw FieldNotFoundException()
         val template =
             templateRepository.findByIdAndDeletedFalse(updateDto.templateId) ?: throw TemplateNotFoundException()

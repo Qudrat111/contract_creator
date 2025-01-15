@@ -4,13 +4,13 @@ import jakarta.validation.constraints.NotNull
 
 data class BaseMessage(val code: Int, val message: String?)
 
-data class LogInDTO(
+data class LoginRequest(
     @NotNull val username: String,
 
     @NotNull val password: String
 )
 
-data class SignInDTO(
+data class SignUpRequest(
     @NotNull val username: String,
     @NotNull var password: String,
     @NotNull val firstName: String,
@@ -21,7 +21,7 @@ data class SignInDTO(
     }
 }
 
-data class UserDTO(
+data class UserResponse(
     val id: Long,
     val firstName: String,
     val lastName: String,
@@ -29,27 +29,27 @@ data class UserDTO(
     val role: RoleEnum,
 ) {
     companion object {
-        fun toResponse(user: User): UserDTO {
+        fun toResponse(user: User): UserResponse {
             user.run {
-                return UserDTO(id!!, firstName, lastName, username, role)
+                return UserResponse(id!!, firstName, lastName, username, role)
             }
         }
     }
 }
 
-data class FieldGetDto(
+data class FieldResponse(
     val id: Long,
     var name: String,
     var type: String,
 ) {
     companion object {
-        fun toDTO(it: Field): FieldGetDto {
-            return FieldGetDto(it.id!!, it.name, it.type.name)
+        fun toDTO(it: Field): FieldResponse {
+            return FieldResponse(it.id!!, it.name, it.type.name)
         }
     }
 }
 
-data class FieldDTO(
+data class FieldRequest(
     @NotNull var name: String,
     @NotNull var type: String
 ) {
@@ -58,13 +58,13 @@ data class FieldDTO(
             return Field(name, TypeEnum.valueOf(type.uppercase()))
         }
 
-        fun toDTO(it: Field): FieldDTO {
-            return FieldDTO(it.name, it.type.name)
+        fun toDTO(it: Field): FieldRequest {
+            return FieldRequest(it.name, it.type.name)
         }
     }
 }
 
-data class FieldUpdateDTO(
+data class FieldUpdateRequest(
     val templateId: Long,
     val name: String?,
     val type: String?
@@ -75,7 +75,7 @@ data class GenerateContractDTO(
     @NotNull val fileType: String
 )
 
-data class AddContractDTO(
+data class AddContractRequest(
     @NotNull val templateId: Long,
     @NotNull val contractFieldValues: List<ContractCreateDTO>,
 )
@@ -104,23 +104,23 @@ data class ContractCreateDTO(
 }
 
 
-data class UpdateContractDTO(
+data class UpdateContractRequest(
     @NotNull val contractId: Long,
     @NotNull val contactFieldValues: List<ContractCreateDTO>
 )
 
-data class TemplateDto(
+data class TemplateResponse(
     val id: Long?,
     @NotNull val name: String,
-    @NotNull val keys: List<FieldDTO>
+    @NotNull val keys: List<FieldRequest>
 ) {
     companion object {
-        fun toResponse(template: Template): TemplateDto {
-            val fieldDTos = mutableListOf<FieldDTO>()
+        fun toResponse(template: Template): TemplateResponse {
+            val fieldDTos = mutableListOf<FieldRequest>()
             template.fields.forEach { fieldDTO ->
-                fieldDTos.add(FieldDTO.toDTO(fieldDTO))
+                fieldDTos.add(FieldRequest.toDTO(fieldDTO))
             }
-            return TemplateDto(template.id, template.name, fieldDTos)
+            return TemplateResponse(template.id, template.name, fieldDTos)
         }
     }
 }
@@ -154,7 +154,7 @@ data class ContractIdsDto(
 
 class TokenDTO(
     val token: String,
-    val userDTO: UserDTO
+    val userResponse: UserResponse
 )
 
 data class FilePathDTO(
@@ -185,6 +185,3 @@ data class GetFieldDto(
     val required: Boolean,
 )
 
-data class GetAllTemplatesDTO(
-    val templates: List<TemplateDto>
-)

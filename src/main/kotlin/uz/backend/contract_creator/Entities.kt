@@ -24,7 +24,6 @@ class BaseEntity(
 )
 
 @Entity(name = "users")
-@Table(name = "users")
 class User(
     @Column(length = 32, nullable = false) val firstName: String,
     @Column(length = 32, nullable = false) val lastName: String,
