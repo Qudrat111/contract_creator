@@ -53,21 +53,13 @@ class Template(
     @Column(length = 50, nullable = false) val name: String,
     @Column(nullable = false) var filePath: String,
     @ManyToMany var fields: MutableList<Field>,
-) : BaseEntity() {
-    fun toResponseDto(): TemplateResponseDto {
-        return TemplateResponseDto(id!!, name, fields.map { it.toResponseDto() }.toMutableList())
-    }
-}
+) : BaseEntity()
 
 @Entity
 class Field(
     @Column(length = 45, nullable = false, unique = true) var name: String,
     @Enumerated(EnumType.STRING) @Column(length = 20) var type: TypeEnum
-) : BaseEntity() {
-    fun toResponseDto(): FieldResponseDto {
-        return FieldResponseDto(id!!, name, type)
-    }
-}
+) : BaseEntity()
 
 @Entity(name = "contracts")
 class Contract(
@@ -98,12 +90,4 @@ class Job(
     var status: TaskStatusEnum = TaskStatusEnum.PENDING,
     @ManyToMany val contracts: MutableList<Contract> = mutableListOf(),
     val hashCode: String = UUID.randomUUID().toString()
-) : BaseEntity() {
-    fun toResponseDTO(): JobResponseDTO {
-        return JobResponseDTO(id!!, fileType, status)
-    }
-
-    fun toResponseDTOWithHashCode(): JobResponseDTO {
-        return JobResponseDTO(id!!, fileType, status, hashCode)
-    }
-}
+) : BaseEntity()

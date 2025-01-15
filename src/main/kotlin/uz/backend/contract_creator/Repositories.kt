@@ -68,7 +68,6 @@ interface TemplateRepository : BaseRepository<Template> {
 
 interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
-    fun findByName(name: String): Field?
     fun findByNameAndDeletedFalse(name:String): Field?
 }
 
@@ -93,7 +92,6 @@ interface ContactAllowedUserRepository : BaseRepository<ContractAllowedUser>
 
 @Repository
 interface JobRepository : BaseRepository<Job> {
-    fun findByHashCode(hashCode: String): Job?
     fun findByHashCodeAndDeletedFalse(hashCode: String): Job?
     fun findAllByCreatedByAndDeletedFalseOrderByIdDesc(createdBy: Long): List<Job>
     fun findByIdAndCreatedByAndDeletedFalse(id: Long, createdBy: Long): Job?

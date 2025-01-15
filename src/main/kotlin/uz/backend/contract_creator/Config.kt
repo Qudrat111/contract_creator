@@ -32,12 +32,6 @@ class WebMvcConfig : WebMvcConfigurer {
     }
 
 
-//    @Bean
-//    fun messageSource() = ResourceBundleMessageSource().apply {
-//        setDefaultEncoding(Charsets.UTF_8.name())
-//        setBasename("message")
-//    }
-
     @Bean
     fun corsConfigurer(): WebMvcConfigurer {
         return object : WebMvcConfigurer {

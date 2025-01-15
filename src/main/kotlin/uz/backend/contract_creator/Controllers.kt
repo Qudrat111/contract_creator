@@ -52,7 +52,7 @@ class AuthController(
 @RequestMapping("/template")
 class TemplateController(private val docFileService: DocFileService) {
 
-    @PostMapping()
+    @PostMapping
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
         docFileService.createNewTemplate(file, name)
@@ -67,7 +67,7 @@ class TemplateController(private val docFileService: DocFileService) {
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun delete(@PathVariable("id") id: Long) = docFileService.deleteTemplate(id)
 
-    @GetMapping()
+    @GetMapping
     fun getAll(pageable: Pageable) = docFileService.getAllTemplates(pageable)
 
     @PutMapping("{id}")

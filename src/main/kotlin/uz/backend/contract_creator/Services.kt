@@ -70,7 +70,7 @@ class AuthServiceImpl(
 
     override fun signIn(signUpRequest: SignUpRequest): UserResponse {
         return signUpRequest.run {
-            if(userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
+            if (userRepository.existsByUserName(username)) throw UsernameAlreadyExists()
             val encoded = passwordEncoder.encode(signUpRequest.password)
             this.password = encoded
             UserResponse.toResponse(userRepository.save(this.toEntity()))
@@ -220,9 +220,11 @@ class DocFileService(
         }
         val keys = getKeys(filePath)
         val fields = getFieldsByKeys(keys)
-        return templateRepository
-            .save(Template(name, filePath, fields.toMutableList()))
-            .toResponseDto()
+
+        return TemplateResponseDto.toResponseDto(
+            templateRepository
+                .save(Template(name, filePath, fields.toMutableList()))
+        )
     }
 
     fun deleteTemplate(id: Long) {
@@ -237,7 +239,7 @@ class DocFileService(
     }
 
     fun getAllTemplates(pageable: Pageable): Page<TemplateResponse> {
-        return templateRepository.findAllNotDeletedForPageable(pageable).map {TemplateResponse.toResponse(it)  }
+        return templateRepository.findAllNotDeletedForPageable(pageable).map { TemplateResponse.toResponse(it) }
     }
 
 
@@ -510,16 +512,16 @@ class DocFileService(
         val userId = getUserId()
         val jobs = jobRepository.findAllByCreatedByAndDeletedFalseOrderByIdDesc(userId!!)
         return jobs.map {
-            if (it.status == TaskStatusEnum.FINISHED) it.toResponseDTOWithHashCode()
-            else it.toResponseDTO()
+            if (it.status == TaskStatusEnum.FINISHED) JobResponseDTO.toResponseDTOWithHashCode(it)
+            else JobResponseDTO.toResponseDTO(it)
         }
     }
 
     fun getOneJob(id: Long): JobResponseDTO {
         val userId = getUserId()
-        val job = jobRepository.findByIdAndCreatedByAndDeletedFalse(id,userId!!)?: throw JobNotFoundException()
-        return  if (job.status == TaskStatusEnum.FINISHED) job.toResponseDTOWithHashCode()
-        else job.toResponseDTO()
+        val job = jobRepository.findByIdAndCreatedByAndDeletedFalse(id, userId!!) ?: throw JobNotFoundException()
+        return if (job.status == TaskStatusEnum.FINISHED) JobResponseDTO.toResponseDTOWithHashCode(job)
+        else JobResponseDTO.toResponseDTO(job)
     }
 }
 
@@ -529,7 +531,7 @@ class FieldServiceImpl(
     private val fieldRepository: FieldRepository,
     private val templateRepository: TemplateRepository,
     private val docFileService: DocFileService,
-    private val jobRepository: JobRepository
+    private val jobRepository: JobRepository,
 ) : FieldService {
 
     fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
@@ -546,7 +548,7 @@ class FieldServiceImpl(
         jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
 
-        return job.toResponseDTO()
+        return JobResponseDTO.toResponseDTO(job)
     }
 
     override fun createField(dto: FieldRequest) {

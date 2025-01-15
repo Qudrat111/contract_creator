@@ -65,7 +65,7 @@ class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val au
             response.sendError(401)
         }
 
-        if (Objects.isNull(username)) throw BadCredentialsException()
+        username?: throw BadCredentialsException()
 
         val userDetails: UserDetails = authService.loadUserByUsername(username)
 

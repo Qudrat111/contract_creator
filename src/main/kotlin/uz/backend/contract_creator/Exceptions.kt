@@ -87,25 +87,25 @@ class FieldNotBelongToTemplate : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.FILED_NOT_BELONG_TEMPLATE
 }
 
-class ContractNotFoundException:BaseExceptionHandler(){
+class ContractNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.CONTRACT_NOT_FOUND
 
 }
 
-class AccessDeniedException:BaseExceptionHandler(){
+class AccessDeniedException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.ACCESS_DENIED
 }
 
-class InvalidFileTypeException():BaseExceptionHandler(){
+class InvalidFileTypeException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.INVALID_FILE_TYPE
 }
 
-class UsernameAlreadyExists():BaseExceptionHandler(){
+class UsernameAlreadyExists : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.USERNAME_ALREADY_EXISTS
 
 }
 
-class JobNotFoundException():BaseExceptionHandler(){
+class JobNotFoundException : BaseExceptionHandler() {
     override fun errorCode() = ErrorCodes.JOB_NOT_FOUND
 
 }
