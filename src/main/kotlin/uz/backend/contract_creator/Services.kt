@@ -24,6 +24,7 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.jvm.Throws
 
 
 interface AuthService : UserDetailsService {
@@ -51,9 +52,13 @@ class AuthServiceImpl(
     override fun logIn(signInDTO: LoginRequest): TokenDTO {
         val authentication = UsernamePasswordAuthenticationToken(signInDTO.username, signInDTO.password)
 
-        authenticationProvider.authenticate(authentication)
+        try {
+            authenticationProvider.authenticate(authentication)
+        }catch(e: RuntimeException){
+            throw UserNotFoundException()
+        }
 
-        val user = loadUserByUsername(signInDTO.username)
+        val user = loadUserByUsername(signInDTO.username!!)
 
         val matches: Boolean = passwordEncoder.matches(signInDTO.password, user.password)
 
@@ -285,7 +290,8 @@ class DocFileService(
                     filesToZip.add(createdFilePath)
                 }
             } ?: run {
-                throw RuntimeException("Contract with id $contractId not found")
+                throw ContractNotFoundException()
+//                throw RuntimeException("Contract with id $contractId not found")
             }
         }
 
