@@ -6,7 +6,6 @@ data class BaseMessage(val code: Int, val message: String?)
 
 data class LoginRequest(
     val username: String,
-
     val password: String,
 )
 
