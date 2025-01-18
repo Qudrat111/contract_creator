@@ -16,6 +16,15 @@ class FieldController(
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun create(@RequestBody @Valid fieldRequest: FieldRequest) = service.createField(fieldRequest)
 
+    @PutMapping("{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    fun update(@PathVariable id: Long, @RequestBody fieldUpdateRequest: FieldUpdateRequest) =
+        service.updateField(id, fieldUpdateRequest)
+
+    @DeleteMapping("{id}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    fun delete(@PathVariable id: Long) = service.deleteField(id)
+
     @GetMapping("{id}")
     @PreAuthorize(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
@@ -29,16 +38,6 @@ class FieldController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll(pageable: Pageable) = service.getAllField(pageable)
-
-    @PutMapping("{id}")
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
-    fun update(@PathVariable id: Long, @RequestBody fieldUpdateRequest: FieldUpdateRequest) =
-        service.updateField(id, fieldUpdateRequest)
-
-    @DeleteMapping("{id}")
-    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
-    fun delete(@PathVariable id: Long) = service.deleteField(id)
-
 }
 
 @RestController
@@ -86,7 +85,7 @@ class TemplateController(private val docFileService: DocFileService) {
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name()," +
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
-    fun show(@PathVariable("id") id: Long) = docFileService.getOneTemplate(id)
+    fun show(@PathVariable("id") id: Long) = docFileService.show(id)
 
 
     @GetMapping

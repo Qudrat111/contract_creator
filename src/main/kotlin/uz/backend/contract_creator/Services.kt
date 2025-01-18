@@ -24,7 +24,6 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.jvm.Throws
 
 
 interface AuthService : UserDetailsService {
@@ -54,11 +53,11 @@ class AuthServiceImpl(
 
         try {
             authenticationProvider.authenticate(authentication)
-        }catch(e: RuntimeException){
+        } catch (e: RuntimeException) {
             throw UserNotFoundException()
         }
 
-        val user = loadUserByUsername(signInDTO.username!!)
+        val user = loadUserByUsername(signInDTO.username)
 
         val matches: Boolean = passwordEncoder.matches(signInDTO.password, user.password)
 
@@ -103,9 +102,10 @@ class UserServiceImpl(
 ) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserResponse {
-        val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
-        user.role = role
-        return UserResponse.toResponse(userRepository.save(user))
+        userRepository.findByIdAndDeletedFalse(userId)?.let { user ->
+            user.role = role
+            return UserResponse.toResponse(userRepository.save(user))
+        } ?: throw UserNotFoundException()
     }
 
     override fun getAllUsers(): List<UserResponse> {
@@ -233,10 +233,11 @@ class DocFileService(
     }
 
     fun deleteTemplate(id: Long) {
-        templateRepository.trash(id)
+        templateRepository.findByIdAndDeletedFalse(id)?.let { templateRepository.trash(id) }
+            ?: throw TemplateNotFoundException()
     }
 
-    fun getOneTemplate(id: Long): ResponseEntity<Resource>? {
+    fun show(id: Long): ResponseEntity<Resource>? {
         if (!templateRepository.existsByIdAndDeletedFalse(id)) throw TemplateNotFoundException()
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
             getResource(it.filePath)
@@ -381,7 +382,7 @@ class DocFileService(
                 if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
                 it.contractFilePath?.let { path -> getResource(path) }
             }
-        }
+        } ?: throw ContractNotFoundException()
     }
 
     fun downloadContract(hashCode: String): ResponseEntity<Resource> {
@@ -538,9 +539,13 @@ class FieldServiceImpl(
     private val templateRepository: TemplateRepository,
     private val docFileService: DocFileService,
     private val jobRepository: JobRepository,
+    private val contractRepository: ContractRepository,
 ) : FieldService {
 
     fun generateContract(generateContractDTO: GenerateContractDTO): JobResponseDTO {
+        generateContractDTO.contractIds.forEach { contractId ->
+            contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
+        }
         val fileType = when (generateContractDTO.fileType.lowercase()) {
             "pdf" -> "pdf"
             "docx" -> "docx"
@@ -553,7 +558,6 @@ class FieldServiceImpl(
         val job = Job(fileTypeEnum, zipFileName)
         jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
-
         return JobResponseDTO.toResponseDTO(job)
     }
 
@@ -597,6 +601,6 @@ class FieldServiceImpl(
     }
 
     override fun deleteField(id: Long) {
-        fieldRepository.trash(id) ?: FieldNotFoundException()
+        fieldRepository.findByIdAndDeletedFalse(id)?.let { fieldRepository.trash(id) } ?: FieldNotFoundException()
     }
 }
