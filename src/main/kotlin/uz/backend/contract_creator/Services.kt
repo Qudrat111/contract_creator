@@ -24,6 +24,7 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
+import kotlin.jvm.Throws
 
 
 interface AuthService : UserDetailsService {
@@ -53,7 +54,7 @@ class AuthServiceImpl(
 
         try {
             authenticationProvider.authenticate(authentication)
-        } catch (e: RuntimeException) {
+        }catch(e: RuntimeException){
             throw UserNotFoundException()
         }
 
@@ -92,6 +93,7 @@ interface UserService {
     fun getAllUsers(): List<UserResponse>
     fun getOneUser(userId: Long): UserResponse
     fun givePermission(userId: Long, contractId: Long)
+    fun getMe(): UserResponse
 }
 
 @Service
@@ -123,6 +125,11 @@ class UserServiceImpl(
         val contract = contractRepository.findByIdAndDeletedFalse(contractId) ?: throw ContractNotFoundException()
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
         contractAllowedUserRepository.save(ContractAllowedUser(user, contract))
+    }
+
+    override fun getMe(): UserResponse {
+        val user = userRepository.findByIdAndDeletedFalse(getUserId()!!)
+        return UserResponse.toResponse(user!!)
     }
 }
 
@@ -558,6 +565,7 @@ class FieldServiceImpl(
         val job = Job(fileTypeEnum, zipFileName)
         jobRepository.save(job)
         docFileService.createZip(generateContractDTO, fileType, zipFileName, job)
+
         return JobResponseDTO.toResponseDTO(job)
     }
 
