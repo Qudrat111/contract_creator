@@ -26,11 +26,12 @@ data class UserResponse(
     val lastName: String,
     val username: String,
     val role: RoleEnum,
+    val status: UserStatus
 ) {
     companion object {
         fun toResponse(user: User): UserResponse {
             user.run {
-                return UserResponse(id!!, firstName, lastName, username, role)
+                return UserResponse(id!!, firstName, lastName, username, role, status)
             }
         }
     }
@@ -90,8 +91,8 @@ data class ContractResponse(
 }
 
 data class ContractCreateDTO(
-     val fieldName: String,
-     val value: String,
+    val fieldName: String,
+    val value: String,
 ) {
     companion object {
         fun toResponse(contractFiledValue: ContractFieldValue) =
@@ -104,14 +105,14 @@ data class ContractCreateDTO(
 
 
 data class UpdateContractRequest(
-     val contractId: Long,
-     val contactFieldValues: List<ContractCreateDTO>,
+    val contractId: Long,
+    val contactFieldValues: List<ContractCreateDTO>,
 )
 
 data class TemplateResponse(
     val id: Long?,
-     val name: String,
-     val keys: List<FieldRequest>,
+    val name: String,
+    val keys: List<FieldRequest>,
 ) {
     companion object {
         fun toResponse(template: Template): TemplateResponse {
@@ -143,7 +144,11 @@ data class TemplateResponseDto(
     companion object {
         fun toResponseDto(save: Template): TemplateResponseDto {
             save.run {
-                return TemplateResponseDto(id!!, name, fields.map { FieldResponseDto.toResponseDto(it) }.toMutableList())
+                return TemplateResponseDto(
+                    id!!,
+                    name,
+                    fields.map { FieldResponseDto.toResponseDto(it) }.toMutableList()
+                )
             }
         }
     }
@@ -156,9 +161,9 @@ data class FieldResponseDto(
 ) {
     companion object {
         fun toResponseDto(it: Field): FieldResponseDto {
-          it.run {
-              return FieldResponseDto(id!!, name, type)
-          }
+            it.run {
+                return FieldResponseDto(id!!, name, type)
+            }
         }
     }
 }
@@ -179,13 +184,13 @@ data class JobResponseDTO(
 
         fun toResponseDTO(it: Job): JobResponseDTO {
             it.run {
-                    return JobResponseDTO(id!!, fileType, status)
+                return JobResponseDTO(id!!, fileType, status)
             }
         }
 
         fun toResponseDTOWithHashCode(it: Job): JobResponseDTO {
-            it.run{
-                    return JobResponseDTO(id!!, fileType, status, hashCode)
+            it.run {
+                return JobResponseDTO(id!!, fileType, status, hashCode)
             }
         }
     }

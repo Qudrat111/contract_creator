@@ -188,11 +188,6 @@ class UserController(
     @GetMapping("/me")
     fun getMe() = userService.getMe()
 
-    @GetMapping("/get-by-first-name")
-    fun getByFirstName(@RequestParam firstName: String) = userService.getByFirstName(firstName)
-
-    @GetMapping("/get-by-last-name")
-    fun getByLastName(@RequestParam lastName: String) = userService.getByLastName(lastName)
 
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
@@ -220,5 +215,6 @@ class UserController(
         "hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name()," +
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
-    fun getAll() = userService.getAllUsers()
+    fun getAll(@RequestParam search: String?, @RequestParam userStatus: UserStatus?, pageable: Pageable) =
+        userService.getAll(search,userStatus,pageable)
 }

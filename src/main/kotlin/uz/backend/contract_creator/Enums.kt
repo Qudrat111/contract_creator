@@ -7,6 +7,11 @@ enum class RoleEnum {
     ROLE_DEFAULT,
 }
 
+enum class UserStatus {
+    ACTIVE,
+    IN_ACTIVE
+}
+
 enum class TypeEnum {
     STRING,
     DATE,
@@ -34,7 +39,7 @@ enum class TaskStatusEnum {
     FINISHED
 }
 
-enum class FileTypeEnum{
+enum class FileTypeEnum {
     PDF,
     DOCX
 }

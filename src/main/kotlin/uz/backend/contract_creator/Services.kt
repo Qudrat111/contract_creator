@@ -89,12 +89,10 @@ class AuthServiceImpl(
 
 interface UserService {
     fun changeRole(userId: Long, role: RoleEnum): UserResponse
-    fun getAllUsers(): List<UserResponse>
+    fun getAll(search: String?, userStatus: UserStatus?, pageable: Pageable): Page<UserResponse>
     fun getOneUser(userId: Long): UserResponse
     fun givePermission(userId: Long, contractId: Long)
     fun getMe(): UserResponse
-    fun getByFirstName(firstName: String): UserResponse?
-    fun getByLastName(lastName: String): UserResponse?
 }
 
 @Service
@@ -111,11 +109,17 @@ class UserServiceImpl(
         } ?: throw UserNotFoundException()
     }
 
-    override fun getAllUsers(): List<UserResponse> {
-        return userRepository.findAllNotDeleted().map {
+    override fun getAll(search: String?, userStatus: UserStatus?, pageable: Pageable): Page<UserResponse> {
+        var userRole: RoleEnum? = null
+        userRepository.findByIdAndDeletedFalse(getUserId()!!)?.let {
+            if (it.role == RoleEnum.ROLE_DIRECTOR)
+                userRole = RoleEnum.ROLE_ADMIN
+        }
+        return userRepository.getAll(search ?: "", userStatus, userRole, pageable).map {
             UserResponse.toResponse(it)
         }
     }
+
 
     override fun getOneUser(userId: Long): UserResponse {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -133,17 +137,6 @@ class UserServiceImpl(
         return UserResponse.toResponse(user!!)
     }
 
-    override fun getByFirstName(firstName: String): UserResponse? {
-        userRepository.findByFirstName(firstName)?.let {
-            return UserResponse.toResponse(it)
-        } ?: throw UserNotFoundException()
-    }
-
-    override fun getByLastName(lastName: String): UserResponse? {
-        userRepository.findByLastName(lastName)?.let {
-            return UserResponse.toResponse(it)
-        } ?: throw UserNotFoundException()
-    }
 }
 
 

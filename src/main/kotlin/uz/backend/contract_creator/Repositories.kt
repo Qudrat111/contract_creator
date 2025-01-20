@@ -13,6 +13,7 @@ import org.springframework.data.jpa.repository.support.JpaEntityInformation
 import org.springframework.data.jpa.repository.support.SimpleJpaRepository
 import org.springframework.data.repository.NoRepositoryBean
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @NoRepositoryBean
@@ -60,8 +61,25 @@ class BaseRepositoryImpl<T : BaseEntity>(
 interface UserRepository : BaseRepository<User> {
     fun existsByUserName(username: String): Boolean
     fun findByUserNameAndDeletedFalse(username: String): User?
-    fun findByFirstName(firstName: String): User?
-    fun findByLastName(lastName: String): User?
+
+    @Query(
+        """
+        select u from users u where u.deleted = false 
+        and (:userStatus is null or u.status = :userStatus)
+        and (:userRole is null or u.role != :userRole)
+        and (lower(u.userName) like lower(concat('%',:search,'%')) 
+         or lower(u.firstName) like lower(concat('%',:search,'%')) 
+         or lower(u.lastName) like lower(concat('%',:search,'%'))
+)
+order by u.id desc
+    """
+    )
+    fun getAll(
+        @Param("search") search: String,
+        @Param("userStatus") userStatus: UserStatus?,
+        @Param("userRole") userRole: RoleEnum?,
+        pageable: Pageable
+    ): Page<User>
 }
 
 interface TemplateRepository : BaseRepository<Template> {
