@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.authentication.AuthenticationProvider
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.userdetails.User
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -89,10 +90,12 @@ class AuthServiceImpl(
 
 interface UserService {
     fun changeRole(userId: Long, role: RoleEnum): UserResponse
+    fun changeStatus(userId: Long, status: UserStatus): UserResponse
     fun getAll(search: String?, userStatus: UserStatus?, pageable: Pageable): Page<UserResponse>
     fun getOneUser(userId: Long): UserResponse
     fun givePermission(userId: Long, contractId: Long)
     fun getMe(): UserResponse
+    fun updateUser(id: Long, updateUser: SignUpRequest): UserResponse?
 }
 
 @Service
@@ -100,12 +103,20 @@ class UserServiceImpl(
     private val userRepository: UserRepository,
     private val contractRepository: ContractRepository,
     private val contractAllowedUserRepository: ContactAllowedUserRepository,
+    private val passwordEncoder: PasswordEncoder
 ) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserResponse {
         userRepository.findByIdAndDeletedFalse(userId)?.let { user ->
             user.role = role
             return UserResponse.toResponse(userRepository.save(user))
+        } ?: throw UserNotFoundException()
+    }
+
+    override fun changeStatus(userId: Long, status: UserStatus): UserResponse {
+        userRepository.findByIdAndDeletedFalse(userId)?.let {
+            it.status = status
+            return UserResponse.toResponse(userRepository.save(it))
         } ?: throw UserNotFoundException()
     }
 
@@ -119,7 +130,6 @@ class UserServiceImpl(
             UserResponse.toResponse(it)
         }
     }
-
 
     override fun getOneUser(userId: Long): UserResponse {
         val user = userRepository.findByIdAndDeletedFalse(userId) ?: throw UserNotFoundException()
@@ -137,6 +147,20 @@ class UserServiceImpl(
         return UserResponse.toResponse(user!!)
     }
 
+    override fun updateUser(id: Long, updateUser: SignUpRequest): UserResponse? {
+
+            userRepository.findByIdAndDeletedFalse(id)?.let {
+                if(userRepository.existsByUserName(updateUser.username)) throw UsernameAlreadyExists()
+
+                it.firstName = updateUser.firstName
+                it.lastName = updateUser.lastName
+                it.userName = updateUser.username
+                it.passWord = passwordEncoder.encode(updateUser.password)
+
+                return UserResponse.toResponse(it)
+            } ?: UserNotFoundException()
+        return null
+    }
 }
 
 

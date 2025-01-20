@@ -1,9 +1,11 @@
 package uz.backend.contract_creator
 
+import org.apache.coyote.BadRequestException
 import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.authorization.AuthorizationDeniedException
 import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseBody
@@ -13,9 +15,14 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 @RestControllerAdvice
 class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSource) {
 
-    @ExceptionHandler(BaseExceptionHandler::class)
-    fun handleAccountException(ex: BaseExceptionHandler): BaseMessage {
-        return ex.getErrorMessage(errorMessageSource)
+    @ExceptionHandler(RuntimeException::class)
+    fun handleAccountException(ex: RuntimeException): ResponseEntity<BaseMessage> {
+//        return ex.getErrorMessage(errorMessageSource)
+        return when (ex) {
+            is BaseExceptionHandler -> ResponseEntity.badRequest().body(ex.getErrorMessage(errorMessageSource))
+            is AuthorizationDeniedException -> ResponseEntity.badRequest().body(AccessDeniedException().getErrorMessage(errorMessageSource))
+            else -> ResponseEntity.badRequest().body(BaseMessage(400, "Support bilan bo'galaning"))
+        }
     }
 
 
@@ -36,7 +43,9 @@ class ExceptionHandler(private val errorMessageSource: ResourceBundleMessageSour
     @ResponseStatus(value = HttpStatus.INTERNAL_SERVER_ERROR)
     @ResponseBody
     fun handleGeneralException(ex: Exception): BaseMessage {
-        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
+        println(ex)
+//        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.message ?: "An error occurred")
+        return BaseMessage(HttpStatus.INTERNAL_SERVER_ERROR.value(), ex.toString())
     }
 }
 

@@ -25,10 +25,10 @@ class BaseEntity(
 
 @Entity(name = "users")
 class User(
-    @Column(length = 32, nullable = false) val firstName: String,
-    @Column(length = 32, nullable = false) val lastName: String,
-    @Column(length = 32, nullable = false, unique = true) val userName: String,
-    @Column(nullable = false) val passWord: String,
+    @Column(length = 32, nullable = false) var firstName: String,
+    @Column(length = 32, nullable = false) var lastName: String,
+    @Column(length = 32, nullable = false, unique = true) var userName: String,
+    @Column(nullable = false) var passWord: String,
     @Enumerated(EnumType.STRING) var role: RoleEnum,
     @Enumerated(EnumType.STRING) var status: UserStatus = UserStatus.ACTIVE
 ) : BaseEntity(), UserDetails {

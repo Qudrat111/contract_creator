@@ -43,7 +43,7 @@ class FieldController(
 @RestController
 @RequestMapping("/auth")
 class AuthController(
-    private val authService: AuthService
+    private val authService: AuthService,
 ) {
     @PostMapping("log-in")
     fun logIn(@RequestBody @Valid loginRequest: LoginRequest) = authService.logIn(loginRequest)
@@ -101,7 +101,7 @@ class TemplateController(private val docFileService: DocFileService) {
 @RequestMapping("/contract")
 class ContractController(
     private val docFileService: DocFileService,
-    private val fileService: FieldServiceImpl
+    private val fileService: FieldServiceImpl,
 ) {
 
     @PostMapping
@@ -181,17 +181,25 @@ class ContractController(
 }
 
 @RestController
-@RequestMapping("/user")
+@RequestMapping("user")
 class UserController(
-    private val userService: UserService
+    private val userService: UserService,
 ) {
-    @GetMapping("/me")
+    @GetMapping("me")
     fun getMe() = userService.getMe()
 
+    @PutMapping("{id}")
+    fun editUser(@PathVariable id: Long, @RequestBody updateUser: SignUpRequest) = userService.updateUser(id, updateUser)
 
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun changeRole(@PathVariable userId: Long, @RequestParam role: RoleEnum) = userService.changeRole(userId, role)
+
+    @PutMapping("change-status/{userId}")
+    @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
+    fun changeStatus(@PathVariable userId: Long, @RequestParam status: UserStatus) =
+        userService.changeStatus(userId, status)
+
 
     @PutMapping("give-permission")
     @PreAuthorize(
@@ -200,7 +208,7 @@ class UserController(
     )
     fun givePermission(
         @RequestParam userId: Long,
-        @RequestParam contractId: Long
+        @RequestParam contractId: Long,
     ) = userService.givePermission(userId, contractId)
 
     @GetMapping("{userId}")
@@ -216,5 +224,5 @@ class UserController(
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name())"
     )
     fun getAll(@RequestParam search: String?, @RequestParam userStatus: UserStatus?, pageable: Pageable) =
-        userService.getAll(search,userStatus,pageable)
+        userService.getAll(search, userStatus, pageable)
 }

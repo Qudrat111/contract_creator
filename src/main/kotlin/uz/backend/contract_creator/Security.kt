@@ -33,19 +33,21 @@ import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
 
+
 @Component
 class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val authService: AuthService) :
     OncePerRequestFilter() {
 
-    @Throws(ServletException::class, IOException::class)
+//    @Throws(ServletException::class, IOException::class, RuntimeException::class)
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        checkAuth(request, response)
+       checkAuth(request, response)
         filterChain.doFilter(request, response)
     }
+
 
     //    @Throws(IOException::class)
     private fun checkAuth(request: HttpServletRequest, response: HttpServletResponse) {
