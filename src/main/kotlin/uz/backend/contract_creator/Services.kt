@@ -24,7 +24,6 @@ import java.nio.file.Paths
 import java.util.*
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-import kotlin.jvm.Throws
 
 
 interface AuthService : UserDetailsService {
@@ -54,7 +53,7 @@ class AuthServiceImpl(
 
         try {
             authenticationProvider.authenticate(authentication)
-        }catch(e: RuntimeException){
+        } catch (e: RuntimeException) {
             throw UserNotFoundException()
         }
 
@@ -94,6 +93,8 @@ interface UserService {
     fun getOneUser(userId: Long): UserResponse
     fun givePermission(userId: Long, contractId: Long)
     fun getMe(): UserResponse
+    fun getByFirstName(firstName: String): UserResponse?
+    fun getByLastName(lastName: String): UserResponse?
 }
 
 @Service
@@ -130,6 +131,18 @@ class UserServiceImpl(
     override fun getMe(): UserResponse {
         val user = userRepository.findByIdAndDeletedFalse(getUserId()!!)
         return UserResponse.toResponse(user!!)
+    }
+
+    override fun getByFirstName(firstName: String): UserResponse? {
+        userRepository.findByFirstName(firstName)?.let {
+            return UserResponse.toResponse(it)
+        } ?: throw UserNotFoundException()
+    }
+
+    override fun getByLastName(lastName: String): UserResponse? {
+        userRepository.findByLastName(lastName)?.let {
+            return UserResponse.toResponse(it)
+        } ?: throw UserNotFoundException()
     }
 }
 

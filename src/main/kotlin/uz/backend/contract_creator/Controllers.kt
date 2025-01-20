@@ -185,9 +185,14 @@ class ContractController(
 class UserController(
     private val userService: UserService
 ) {
-
     @GetMapping("/me")
-    fun getMe()=userService.getMe()
+    fun getMe() = userService.getMe()
+
+    @GetMapping("/get-by-first-name")
+    fun getByFirstName(@RequestParam firstName: String) = userService.getByFirstName(firstName)
+
+    @GetMapping("/get-by-last-name")
+    fun getByLastName(@RequestParam lastName: String) = userService.getByLastName(lastName)
 
     @PutMapping("change-role/{userId}")
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")

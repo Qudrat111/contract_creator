@@ -60,6 +60,8 @@ class BaseRepositoryImpl<T : BaseEntity>(
 interface UserRepository : BaseRepository<User> {
     fun existsByUserName(username: String): Boolean
     fun findByUserNameAndDeletedFalse(username: String): User?
+    fun findByFirstName(firstName: String): User?
+    fun findByLastName(lastName: String): User?
 }
 
 interface TemplateRepository : BaseRepository<Template> {
@@ -68,7 +70,7 @@ interface TemplateRepository : BaseRepository<Template> {
 
 interface FieldRepository : BaseRepository<Field> {
     fun existsByName(name: String): Boolean
-    fun findByNameAndDeletedFalse(name:String): Field?
+    fun findByNameAndDeletedFalse(name: String): Field?
 }
 
 @Repository
@@ -79,12 +81,15 @@ interface ContractRepository : BaseRepository<Contract> {
 
 @Repository
 interface ContractFieldValueRepository : BaseRepository<ContractFieldValue> {
-    fun findAllByContractId(contractId: Long):List<ContractFieldValue>
-    @Query("""
+    fun findAllByContractId(contractId: Long): List<ContractFieldValue>
+
+    @Query(
+        """
         select cfv from contractFieldValue  cfv
         where cfv.contract.id = :contractId and cfv.field.id = :fieldId
-    """)
-    fun findContractFieldValue(contractId: Long,fieldId:Long):ContractFieldValue
+    """
+    )
+    fun findContractFieldValue(contractId: Long, fieldId: Long): ContractFieldValue
 }
 
 @Repository
