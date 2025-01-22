@@ -4,7 +4,6 @@ import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import jakarta.servlet.FilterChain
-import jakarta.servlet.ServletException
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.springframework.beans.factory.annotation.Value
@@ -25,11 +24,11 @@ import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.web.AuthenticationEntryPoint
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
-import java.io.IOException
 import java.util.*
 import javax.crypto.SecretKey
 
@@ -38,13 +37,13 @@ import javax.crypto.SecretKey
 class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val authService: AuthService) :
     OncePerRequestFilter() {
 
-//    @Throws(ServletException::class, IOException::class, RuntimeException::class)
+    //    @Throws(ServletException::class, IOException::class, RuntimeException::class)
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
-        filterChain: FilterChain
+        filterChain: FilterChain,
     ) {
-       checkAuth(request, response)
+        checkAuth(request, response)
         filterChain.doFilter(request, response)
     }
 
@@ -67,7 +66,7 @@ class JwtFilter(@Lazy private val jwtProvider: JwtProvider, @Lazy private val au
             response.sendError(401)
         }
 
-        username?: throw BadCredentialsException()
+        username ?: throw BadCredentialsException()
 
         val userDetails: UserDetails = authService.loadUserByUsername(username)
 
@@ -123,12 +122,15 @@ class JwtProvider {
 @EnableMethodSecurity
 class SecurityConfig(
     @Lazy private val authService: AuthService,
-    @Lazy private val jwtFilter: JwtFilter
+    @Lazy private val jwtFilter: JwtFilter,
 ) {
 
     @Bean
     fun filterChain(httpSecurity: HttpSecurity): SecurityFilterChain {
 
+        httpSecurity.exceptionHandling {
+            it.authenticationEntryPoint(authenticationEntryPoint())
+        }
         httpSecurity.authorizeHttpRequests(
             Customizer { auth ->
                 auth
@@ -160,5 +162,16 @@ class SecurityConfig(
         provider.setPasswordEncoder(passwordEncoder())
         provider.setUserDetailsService(authService)
         return provider
+    }
+
+    @Bean
+    fun authenticationEntryPoint(): AuthenticationEntryPoint {
+        return AuthenticationEntryPoint { request, response, authException ->
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            response.contentType = "application/json"
+            response.writer.write("""{
+            "code": 403
+            "message": "${authException.message}"}""".trimMargin())
+        }
     }
 }

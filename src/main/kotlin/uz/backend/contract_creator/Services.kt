@@ -103,7 +103,7 @@ class UserServiceImpl(
     private val userRepository: UserRepository,
     private val contractRepository: ContractRepository,
     private val contractAllowedUserRepository: ContactAllowedUserRepository,
-    private val passwordEncoder: PasswordEncoder
+    private val passwordEncoder: PasswordEncoder,
 ) : UserService {
 
     override fun changeRole(userId: Long, role: RoleEnum): UserResponse {
@@ -149,16 +149,16 @@ class UserServiceImpl(
 
     override fun updateUser(id: Long, updateUser: SignUpRequest): UserResponse? {
 
-            userRepository.findByIdAndDeletedFalse(id)?.let {
-                if(userRepository.existsByUserName(updateUser.username)) throw UsernameAlreadyExists()
+        userRepository.findByIdAndDeletedFalse(id)?.let {
+            if (userRepository.existsByUserName(updateUser.username)) throw UsernameAlreadyExists()
 
-                it.firstName = updateUser.firstName
-                it.lastName = updateUser.lastName
-                it.userName = updateUser.username
-                it.passWord = passwordEncoder.encode(updateUser.password)
+            it.firstName = updateUser.firstName
+            it.lastName = updateUser.lastName
+            it.userName = updateUser.username
+            it.passWord = passwordEncoder.encode(updateUser.password)
 
-                return UserResponse.toResponse(it)
-            } ?: UserNotFoundException()
+            return UserResponse.toResponse(it)
+        } ?: UserNotFoundException()
         return null
     }
 }
@@ -274,7 +274,13 @@ class DocFileService(
             ?: throw TemplateNotFoundException()
     }
 
-    fun show(id: Long): ResponseEntity<Resource>? {
+    //    fun show(id: Long): ResponseEntity<Resource>? {
+//        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw TemplateNotFoundException()
+//        return templateRepository.findByIdAndDeletedFalse(id)?.let {
+//            getResource(it.filePath)
+//        }
+//    }
+    fun getOneTemplate(id: Long): ResponseEntity<ByteArray>? {
         if (!templateRepository.existsByIdAndDeletedFalse(id)) throw TemplateNotFoundException()
         return templateRepository.findByIdAndDeletedFalse(id)?.let {
             getResource(it.filePath)
@@ -318,9 +324,9 @@ class DocFileService(
                     fileName = fileName.substringBeforeLast(".") + ".pdf"
                     val contractFilePathPdf = "./files/contracts/$fileName"
                     if (Files.exists(Paths.get(contractFilePathPdf))) Files.delete(Paths.get(contractFilePathPdf))
-                    convertWordToPdf(
-                        contractFilePathDocx, contractFilePathPdf
-                    )
+//                    convertWordToPdf(
+//                        contractFilePathDocx, contractFilePathPdf
+//                    )
 
                     val createdFilePath = contractFilePathDocx.substringBeforeLast(".") + ".$fileType"
                     contract.contractFilePath = createdFilePath
@@ -403,8 +409,25 @@ class DocFileService(
             ?: throw ContractNotFoundException()
     }
 
-    fun getContract(id: Long): ResponseEntity<Resource>? {
-        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw ContractNotFoundException()
+    //    fun getContract(id: Long): ResponseEntity<Resource>? {
+//        if (!templateRepository.existsByIdAndDeletedFalse(id)) throw ContractNotFoundException()
+//        return contractRepository.findByIdAndDeletedFalse(id)?.let {
+//            val userId = getUserId()
+//            val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
+//            userOpt?.let { user ->
+//                var found = false
+//                for (allowedOperator in it.allowedOperators) {
+//                    if (allowedOperator.operator.id == getUserId()) {
+//                        found = true
+//                        break
+//                    }
+//                }
+//                if ((getUserId() != it.createdBy) && !found && (user.role != RoleEnum.ROLE_DIRECTOR && user.role != RoleEnum.ROLE_ADMIN)) throw AccessDeniedException()
+//                it.contractFilePath?.let { path -> getResource(path) }
+//            }
+//        } ?: throw ContractNotFoundException()
+//    }
+    fun getContract(id: Long): ResponseEntity<ByteArray>? {
         return contractRepository.findByIdAndDeletedFalse(id)?.let {
             val userId = getUserId()
             val userOpt = userRepository.findByIdAndDeletedFalse(userId!!)
@@ -422,6 +445,19 @@ class DocFileService(
         } ?: throw ContractNotFoundException()
     }
 
+    //    fun downloadContract(hashCode: String): ResponseEntity<Resource> {
+//        jobRepository.findByHashCodeAndDeletedFalse(hashCode)?.let { job ->
+//            val filePath = Paths.get(job.zipFilePath)
+//            val resource = UrlResource(filePath.toUri())
+//
+//            if (resource.exists() && resource.isReadable) {
+//                return ResponseEntity.ok().header(
+//                    HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contracts.zip\""
+//                ).body(resource)
+//            }
+//        }
+//        throw FileNotFoundException()
+//    }
     fun downloadContract(hashCode: String): ResponseEntity<Resource> {
         jobRepository.findByHashCodeAndDeletedFalse(hashCode)?.let { job ->
             val filePath = Paths.get(job.zipFilePath)
@@ -429,14 +465,31 @@ class DocFileService(
 
             if (resource.exists() && resource.isReadable) {
                 return ResponseEntity.ok().header(
-                    HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contracts.zip\""
+                    HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"contracts.zip\"",
+                    HttpHeaders.CONTENT_TYPE, "application/${job.fileType.toString().lowercase()}"
                 ).body(resource)
             }
         }
         throw FileNotFoundException()
     }
 
-    private fun getResource(path: String): ResponseEntity<Resource> {
+//    private fun getResource(path: String): ResponseEntity<Resource> {
+//        val filePath = Paths.get(path).normalize()
+//        val resource: Resource?
+//        resource = UrlResource(filePath.toUri())
+//        if (!resource.exists()) {
+//            throw FileNotFoundException("File not found: $path")
+//        }
+//        var contentType = Files.probeContentType(filePath)
+//        if (contentType == null) {
+//            contentType = "application/octet-stream"
+//        }
+//        return ResponseEntity.ok()
+//            .contentType(MediaType.parseMediaType(contentType))
+//            .body(resource)
+//    }
+
+    private fun getResource(path: String): ResponseEntity<ByteArray> {
         val filePath = Paths.get(path).normalize()
         val resource: Resource?
         resource = UrlResource(filePath.toUri())
@@ -447,9 +500,20 @@ class DocFileService(
         if (contentType == null) {
             contentType = "application/octet-stream"
         }
+        val fileType = path.substringAfterLast(".")
+        when (fileType.lowercase()) {
+            "pdf" -> {
+                contentType = "application/pdf"
+            }
+
+            "docx" -> {
+                contentType = "application/msword"
+            }
+        }
+
         return ResponseEntity.ok()
             .contentType(MediaType.parseMediaType(contentType))
-            .body(resource)
+            .body(resource.inputStream.readAllBytes())
     }
 
     fun getAllOperatorContracts(id: Long): List<ContractDto> {

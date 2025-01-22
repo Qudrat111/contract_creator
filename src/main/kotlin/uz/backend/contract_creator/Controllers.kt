@@ -57,7 +57,7 @@ class AuthController(
 @RequestMapping("/template")
 class TemplateController(private val docFileService: DocFileService) {
 
-    @PostMapping
+    @PostMapping(consumes = ["multipart/form-data"])
     @PreAuthorize("hasAnyRole(T(uz.backend.contract_creator.RoleEnum).ROLE_ADMIN.name())")
     fun addTemplate(@RequestParam("file") file: MultipartFile, @RequestParam name: String) =
         docFileService.createNewTemplate(file, name)
@@ -85,7 +85,7 @@ class TemplateController(private val docFileService: DocFileService) {
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_DIRECTOR.name()," +
                 "T(uz.backend.contract_creator.RoleEnum).ROLE_OPERATOR.name())"
     )
-    fun show(@PathVariable("id") id: Long) = docFileService.show(id)
+    fun show(@PathVariable("id") id: Long) = docFileService.getOneTemplate(id)
 
 
     @GetMapping

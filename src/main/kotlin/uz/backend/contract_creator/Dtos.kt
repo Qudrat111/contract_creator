@@ -26,7 +26,7 @@ data class UserResponse(
     val lastName: String,
     val username: String,
     val role: RoleEnum,
-    val status: UserStatus
+    val status: UserStatus?
 ) {
     companion object {
         fun toResponse(user: User): UserResponse {
